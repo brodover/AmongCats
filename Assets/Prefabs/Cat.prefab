@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 2374135898069991964}
   - component: {fileID: 1603422515282840019}
   - component: {fileID: 1753880803733090943}
-  - component: {fileID: 7909514261723069765}
   - component: {fileID: 2886886916260548109}
-  - component: {fileID: 6798182935467817135}
+  - component: {fileID: 7909514261723069765}
+  - component: {fileID: 181050285256467184}
   m_Layer: 9
   m_Name: Cat
   m_TagString: Untagged
@@ -103,30 +103,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &7909514261723069765
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2227057611836287715}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ea83155ef406db4ab3f04a6d101c6ae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ignoreMe:
-    serializedVersion: 2
-    m_Bits: 512
-  getRadius: 20
-  wallMask:
-    serializedVersion: 2
-    m_Bits: 1024
-  sceneObjects: []
-  lightRays: {fileID: 0}
-  offset: 0.05
-  showRed: 0
-  showGreen: 0
 --- !u!54 &2886886916260548109
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -151,11 +127,35 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 72
-  m_CollisionDetection: 0
---- !u!136 &6798182935467817135
-CapsuleCollider:
+  m_Interpolate: 1
+  m_Constraints: 120
+  m_CollisionDetection: 1
+--- !u!114 &7909514261723069765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2227057611836287715}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ea83155ef406db4ab3f04a6d101c6ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ignoreMe:
+    serializedVersion: 2
+    m_Bits: 512
+  getRadius: 20
+  wallMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  sceneObjects: []
+  lightRays: {fileID: 0}
+  offset: 0.05
+  showRed: 0
+  showGreen: 0
+--- !u!65 &181050285256467184
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -172,8 +172,6 @@ CapsuleCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 2.18254
-  m_Height: 4.36508
-  m_Direction: 1
-  m_Center: {x: -0.15245993, y: -0.15249014, z: 0}
+  serializedVersion: 3
+  m_Size: {x: 4.6699996, y: 4.3599997, z: 2}
+  m_Center: {x: 0, y: -0.000030517578, z: 0}

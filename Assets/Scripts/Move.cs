@@ -14,11 +14,15 @@ public class Move : MonoBehaviour
     {
         moveInput.x = Input.GetAxisRaw("Horizontal");
         moveInput.y = Input.GetAxisRaw("Vertical");
-    }
-    private void FixedUpdate()
-    {
+
         rb.MovePosition(rb.position +
              (moveInput.normalized * moveSpeed *
-              Time.fixedDeltaTime));
+              Time.deltaTime));
     }
+    //private void FixedUpdate()
+    //{
+    //    rb.MovePosition(rb.position +
+    //         (moveInput.normalized * moveSpeed *
+    //          Time.fixedDeltaTime));
+    //}
 }
