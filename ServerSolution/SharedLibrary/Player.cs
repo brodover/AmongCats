@@ -1,4 +1,5 @@
 ﻿using System.Net.WebSockets;
+using System.Numerics;
 
 namespace SharedLibrary
 {
@@ -7,6 +8,9 @@ namespace SharedLibrary
         public string Id { get; set; }
         public string Name { get; set; }
         public string Role { get; set; }
-        public WebSocket Socket { get; set; }
+
+        public string RoomId { get; set; }
+        public Vector3 Position { get; set; } = Vector3.Zero;
+        public bool IsFaceLeft { get; set; } = true;
     }
 }
