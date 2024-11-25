@@ -2,7 +2,9 @@
 using Server.Hubs;
 using Server.Models;
 using SharedLibrary;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
+using static Server.Helpers.Common;
 
 namespace Server.Helpers
 {
@@ -12,9 +14,7 @@ namespace Server.Helpers
         public IReadOnlyList<Room> ActiveRooms => _activeRooms;
         private readonly List<Room> _activeRooms = new();
 
-        private readonly Queue<Player> WaitingPlayers = new();  // players in queue
-        private readonly HashSet<string> CanceledPlayers = new(); // players who canceled queue
-        private readonly Queue<Room> WaitingRooms = new();  // incomplete rooms
+        private readonly PriorityQueue<Player, PlayerPriority> WaitingPlayers = new(); // players in queue
 
         private readonly IHubContext<GameHub> _hubContext;
 
@@ -25,84 +25,62 @@ namespace Server.Helpers
 
         public bool AddToQueue(Player player)
         {
-            lock (CanceledPlayers)
-            {
-                if (CanceledPlayers.Contains(player.Id))
-                {
-                    return false;
-                }
-            }
-
             lock (WaitingPlayers)
             {
-                WaitingPlayers.Enqueue(player);
+                WaitingPlayers.Enqueue(player, PlayerPriority.Normal);
                 TryCreateRoom();
             }
 
             return true;
         }
 
-        // don't call this yet. or else, canceled players will have to wait till
-        // someone else joins queue to get unblocked from joining
         public void RemoveFromQueue(Player player)
         {
-            lock (CanceledPlayers)
+            lock (WaitingPlayers)
             {
-                if (!CanceledPlayers.Contains(player.Id))
-                {
-                    CanceledPlayers.Add(player.Id);
-                }
+                WaitingPlayers.Enqueue(player, PlayerPriority.Canceled);
             }
         }
 
         // called when WaitingPlayers is locked already
         private async void TryCreateRoom()
         {
-            Room room = new Room();
+            Room room = null;
 
-            lock (CanceledPlayers)
+            lock (WaitingPlayers)
             {
-                var canceledPlayersToRemove = new List<string>();
-
-                if (WaitingPlayers.Count - CanceledPlayers.Count >= Room.MaxPlayers)
+                if (WaitingPlayers.Count >= Room.MaxPlayers)
                 {
-                    // if existing half created room exists, use it
-                    if (WaitingRooms.Count > 0)
-                        room = WaitingRooms.Dequeue();
-                    else
-                        room = new Room { Id = Guid.NewGuid().ToString() };
+                    room = new Room { Id = Guid.NewGuid().ToString() };
+
 
                     // add waiting players but not if they canceled
-                    var i = room.Players.Count;
-                    while (i < Room.MaxPlayers)
+                    while (room.Players.Count < Room.MaxPlayers && WaitingPlayers.TryDequeue(out var player, out var priority))
                     {
-                        var player = WaitingPlayers.Dequeue();
-
-                        if (CanceledPlayers.Contains(player.Id))
+                        if (priority == PlayerPriority.Canceled)
                         {
-                            canceledPlayersToRemove.Add(player.Id);
                             continue;
                         }
 
                         room.Players.Add(player);
-                        i++;
                     }
 
                     if (room.Players.Count < Room.MaxPlayers)
-                        WaitingRooms.Enqueue(room);
-
-                    foreach (var item in canceledPlayersToRemove)
                     {
-                        CanceledPlayers.Remove(item);
+                        foreach (var player in room.Players)
+                        {
+                            WaitingPlayers.Enqueue(player, PlayerPriority.High);
+                        }
+                        return;
                     }
                 }
             }
 
             // add each player to game and notify players
-            if (room.Players.Count >= Room.MaxPlayers)
+            if (room?.Players.Count >= Room.MaxPlayers)
             {
-                if (_hubContext != null)
-                {
+                /*if (_hubContext != null)
+                {*/
                     foreach (var player in room.Players)
                     {
                         player.RoomId = room.Id;
@@ -112,11 +90,11 @@ namespace Server.Helpers
                     await _hubContext.Clients.Group(room.Id).SendAsync(Common.HubMessage.MatchCreated, room.Id);
                    
                     AddRoom(room);
-                }
+                /*}
                 else
                 {
                     throw new InvalidOperationException("HubContext is not initialized.");
-                }
+                }*/
             }
         }
 

@@ -8,25 +8,35 @@ namespace Server.Hubs
     {
         private readonly PlayerManager _playerM;
         private readonly MatchmakingManager _matchmakingM;
+        private readonly ILogger<GameHub> _logger;
 
-        public GameHub(PlayerManager manager, MatchmakingManager matchmakingM)
+        public GameHub(PlayerManager manager, MatchmakingManager matchmakingM, ILogger<GameHub> logger)
         {
             _playerM = manager;
             _matchmakingM = matchmakingM;
+            _logger = logger;
         }
 
         public override Task OnConnectedAsync()
         {
+            _logger.LogDebug("Client connected: {ConnectionId}", Context.ConnectionId);
             _playerM.AddPlayer(Context.ConnectionId, new Player() { Id = Context.ConnectionId });
             return base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
+            _logger.LogDebug("Client disconnected: {ConnectionId}", Context.ConnectionId);
+            if (exception != null)
+            {
+                _logger.LogError(exception, "Client disconnected with error");
+            }
+
             //remove player from game/queue and server if disconnect
             await LeaveGame();
-            //await LeaveQueue();
+            LeaveQueue();
             _playerM.RemovePlayer(Context.ConnectionId);
+
             await base.OnDisconnectedAsync(exception);
         }
 

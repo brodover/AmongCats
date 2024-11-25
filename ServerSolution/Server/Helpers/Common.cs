@@ -14,5 +14,12 @@
         {
             public const string MatchCreated = "MatchCreated";
         }
+
+        public enum PlayerPriority
+        {
+            High = 1, // Higher priority players
+            Normal = 2, // Active players
+            Canceled = 3 // Canceled players
+        }
     }
 }

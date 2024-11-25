@@ -1,4 +1,5 @@
-﻿using SharedLibrary;
+﻿using System.Collections.Concurrent;
+using SharedLibrary;
 
 namespace Server.Helpers
 {
@@ -6,15 +7,11 @@ namespace Server.Helpers
     {
         public IReadOnlyDictionary<string, Player> Players => _players;
 
-        private readonly Dictionary<string, Player> _players = new();
+        private readonly ConcurrentDictionary<string, Player> _players = new();
 
         public void AddPlayer(string id, Player player)
         {
-            lock (_players)
-            {
-                if (!_players.ContainsKey(id))
-                    _players.Add(id, player);
-            }
+            _players.TryAdd(id, player);
         }
 
         public Player RemovePlayer(string id)
