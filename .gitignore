@@ -2,6 +2,9 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
+/ClientSolution/Assets/NuGet/
+/ClientSolution/Assets/NuGet.config
+
 /ClientSolution/[Ll]ibrary/
 /ClientSolution/[Tt]emp/
 /ClientSolution/[Oo]bj/
