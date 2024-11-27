@@ -11,10 +11,9 @@ public class MainMenu : MonoBehaviour
 {
     private bool isQueuing = false;
     private Role role = Role.Random;
-    private string url = Common.ServerUrl + "/check-queue";
 
-    public Transform SelectMenu;
-    public Transform QueueMenu;
+    public GameObject selectMenu;
+    public GameObject queueMenu;
     [Space]
     public Button humanButton;
     public Button catButton;
@@ -23,8 +22,10 @@ public class MainMenu : MonoBehaviour
     public TMP_Text queueText;
     public Button cancelButton;
 
-    void Start()
+    private void Start()
     {
+        ShowSelectMenu(true);
+
         humanButton.onClick.AddListener(() => OnSelect(Role.Human));
         catButton.onClick.AddListener(() => OnSelect(Role.Cat));
         randomButton.onClick.AddListener(() => OnSelect(Role.Random));
@@ -32,13 +33,15 @@ public class MainMenu : MonoBehaviour
         cancelButton.onClick.AddListener(() => OnCancel());
     }
 
-    void OnSelect(Role role)
+    private async void OnSelect(Role role)
     {
+        ShowSelectMenu(false);
+
         this.role = role;
         queueText.text = $"Queuing as {role}";
         Debug.Log($"Player is queuing as: {role}");
         StartCoroutine(Wait1Sec());
-        //MatchmakingManager.Instance.PlayerReady(role);
+        await SignalRConnectionManager.Instance.PlayerJoinQueue(role);
         isQueuing = true;
     }
 
@@ -47,46 +50,24 @@ public class MainMenu : MonoBehaviour
         yield return new WaitForSeconds(1);
     }
 
-    void OnCancel()
+    private void OnCancel()
     {
         Debug.Log($"Player canceled queue: {role}");
         isQueuing = false;
+
+        ShowSelectMenu(true);
     }
 
-    public void OnGameStart()
+    private void OnGameStart()
     {
         Debug.Log($"Game starting with role: {role}");
         PlayerPrefs.SetString("PlayerRole", role.ToString()); // Save role for game scene
         SceneManager.LoadScene("GameScene");
     }
 
-    private void Update()
+    private void ShowSelectMenu(bool toShow)
     {
-
-        if (isQueuing)
-        {
-            UnityWebRequest request = UnityWebRequest.Get(url);
-            request.SendWebRequest();
-
-            if (request.result == UnityWebRequest.Result.Success)
-            {
-                string response = request.downloadHandler.text;
-                Debug.Log("Queue Response: " + response);
-
-                if (response.Contains("RoomId"))
-                {
-                    // Room ready, start the game
-                    Debug.Log("Room found! Transitioning to game...");
-                    isQueuing = false;
-
-                    // Call scene change or other logic here
-
-                }
-            }
-            else
-            {
-                Debug.LogError("Error checking queue: " + request.error);
-            }
-        }
+        selectMenu.SetActive(toShow);
+        queueMenu.SetActive(!toShow);
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using Server.Helpers;
 using SharedLibrary;
 
@@ -51,6 +51,7 @@ namespace Server.Hubs
             player.Role = role;
 
             _matchmakingM.AddToQueue(player);
+
             return Response.Succeed();
         }
 
@@ -88,5 +89,11 @@ namespace Server.Hubs
 
             return Response.Succeed();
         }
+
+        public async Task SendMessage(string message)
+        {
+            await Clients.All.SendAsync("ReceiveMessage", message);
+        }
+
     }
 }
