@@ -24,13 +24,13 @@ builder.Services.AddControllers()
         options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
 // Configure logging
-//builder.Logging.ClearProviders();
-//builder.Logging.AddConsole();
-//builder.Logging.AddDebug();
-//if (builder.Environment.IsDevelopment())
-//    builder.Logging.SetMinimumLevel(LogLevel.Debug);
-//else
-//    builder.Logging.SetMinimumLevel(LogLevel.Error);
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+if (builder.Environment.IsDevelopment())
+    builder.Logging.SetMinimumLevel(LogLevel.Debug);
+else
+    builder.Logging.SetMinimumLevel(LogLevel.Error);
 
 builder.Services.AddSingleton<PlayerManager>();
 builder.Services.AddSingleton<MatchmakingManager>();
