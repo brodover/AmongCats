@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Server.Helpers;
 using SharedLibrary;
+using static SharedLibrary.Common;
 
 namespace Server.Hubs
 {
@@ -15,6 +16,7 @@ namespace Server.Hubs
             _playerM = manager;
             _matchmakingM = matchmakingM;
             _logger = logger;
+            _logger.LogInformation("Testing logger output.");
         }
 
         public override Task OnConnectedAsync()
@@ -33,8 +35,8 @@ namespace Server.Hubs
             }
 
             //remove player from game/queue and server if disconnect
-            await LeaveGame();
-            LeaveQueue();
+            /*await LeaveGame();
+            LeaveQueue();*/
             _playerM.RemovePlayer(Context.ConnectionId);
 
             await base.OnDisconnectedAsync(exception);
@@ -42,11 +44,13 @@ namespace Server.Hubs
 
         public Response JoinQueue(string role)
         {
+            _logger.LogDebug("JoinQueue: {role}", role);
+
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(Common.ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer);
 
             if (player.RoomId != string.Empty)
-                return Response.Fail(Common.ServerError.AlrInMatch);
+                return Response.Fail(ServerError.AlrInMatch);
 
             player.Role = role;
 
@@ -57,8 +61,10 @@ namespace Server.Hubs
 
         public Response LeaveQueue()
         {
+            _logger.LogDebug("LeaveQueue");
+
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(Common.ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer);
 
             _matchmakingM.RemoveFromQueue(player);
 
@@ -67,17 +73,19 @@ namespace Server.Hubs
 
         public async Task<Response> LeaveGame()
         {
+            _logger.LogDebug("LeaveGame");
+
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(Common.ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer);
 
             if (player.RoomId == string.Empty)
-                return Response.Fail(Common.ServerError.NoRoomId);
+                return Response.Fail(ServerError.NoRoomId);
 
             player.RoomId = string.Empty;
 
             var room = _matchmakingM.ActiveRooms.First(x => x.Id == player.RoomId);
             if (room == null)
-                return Response.Fail(Common.ServerError.NoActiveRoom);
+                return Response.Fail(ServerError.NoActiveRoom);
 
             foreach (var roomPlayer in room.Players)
             {
@@ -92,7 +100,9 @@ namespace Server.Hubs
 
         public async Task SendMessage(string message)
         {
-            await Clients.All.SendAsync("ReceiveMessage", message);
+            _logger.LogDebug("SendMessage: {message}", message);
+
+            await Clients.All.SendAsync(HubMsg.ToClient.ReceiveMessage, message);
         }
 
     }

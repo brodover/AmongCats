@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Server.Hubs;
-using Server.Models;
 using SharedLibrary;
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using static Server.Helpers.Common;
+using static Server.Helpers.ServerCommon;
 
 namespace Server.Helpers
 {
@@ -81,15 +79,16 @@ namespace Server.Helpers
             {
                 /*if (_hubContext != null)
                 {*/
-                    foreach (var player in room.Players)
-                    {
-                        player.RoomId = room.Id;
-                        await _hubContext.Groups.AddToGroupAsync(player.Id, room.Id);
-                    }
-                    
-                    await _hubContext.Clients.Group(room.Id).SendAsync(Common.HubMessage.MatchCreated, room.Id);
+                foreach (var player in room.Players)
+                {
+                    player.RoomId = room.Id;
+                    await _hubContext.Groups.AddToGroupAsync(player.Id, room.Id);
+                }
+
+                AddRoom(room);
+
+                await _hubContext.Clients.Group(room.Id).SendAsync(Common.HubMsg.ToClient.MatchCreated, room);
                    
-                    AddRoom(room);
                 /*}
                 else
                 {

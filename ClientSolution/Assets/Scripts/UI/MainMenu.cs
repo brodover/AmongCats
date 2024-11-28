@@ -1,15 +1,13 @@
 using System.Collections;
+using SharedLibrary;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using static Common;
+using static SharedLibrary.Common;
 
 public class MainMenu : MonoBehaviour
 {
-    private bool isQueuing = false;
     private Role role = Role.Random;
 
     public GameObject selectMenu;
@@ -35,14 +33,16 @@ public class MainMenu : MonoBehaviour
 
     private async void OnSelect(Role role)
     {
-        ShowSelectMenu(false);
-
         this.role = role;
         queueText.text = $"Queuing as {role}";
+        cancelButton.gameObject.SetActive(false);
+        ShowSelectMenu(false);
         Debug.Log($"Player is queuing as: {role}");
+
         StartCoroutine(Wait1Sec());
+
+        cancelButton.gameObject.SetActive(true);
         await SignalRConnectionManager.Instance.PlayerJoinQueue(role);
-        isQueuing = true;
     }
 
     IEnumerator Wait1Sec()
@@ -53,21 +53,40 @@ public class MainMenu : MonoBehaviour
     private void OnCancel()
     {
         Debug.Log($"Player canceled queue: {role}");
-        isQueuing = false;
 
         ShowSelectMenu(true);
-    }
-
-    private void OnGameStart()
-    {
-        Debug.Log($"Game starting with role: {role}");
-        PlayerPrefs.SetString("PlayerRole", role.ToString()); // Save role for game scene
-        SceneManager.LoadScene("GameScene");
     }
 
     private void ShowSelectMenu(bool toShow)
     {
         selectMenu.SetActive(toShow);
         queueMenu.SetActive(!toShow);
+    }
+
+    private void OnGameStart()
+    {
+        Debug.Log($"Game starting with role: {role}");
+        PlayerPrefs.SetString("PlayerRole", role.ToString());
+        SceneManager.LoadScene("GameScene");
+    }
+
+    private void HandleMatchCreated(Room room)
+    {
+        queueText.text = $"Starting match...";
+
+        OnGameStart();
+    }
+
+    private void OnEnable()
+    {
+        SignalRConnectionManager.Instance.OnMatchCreated += HandleMatchCreated;
+    }
+
+    private void OnDisable()
+    {
+        if (SignalRConnectionManager.Instance != null)
+        {
+            SignalRConnectionManager.Instance.OnMatchCreated -= HandleMatchCreated;
+        }
     }
 }

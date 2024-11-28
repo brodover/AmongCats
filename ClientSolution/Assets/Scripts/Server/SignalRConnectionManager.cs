@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
+using SharedLibrary;
+using Unity.Burst.Intrinsics;
 using UnityEngine;
-using static Common;
+using static ClientCommon;
+using static SharedLibrary.Common;
 
 public class SignalRConnectionManager
 {
     private static SignalRConnectionManager _instance;
     public static SignalRConnectionManager Instance => _instance ??= new SignalRConnectionManager();
+
+    public event Action<Room> OnMatchCreated;
 
     private List<PlayerConnection> _playerConnections = new List<PlayerConnection>();
     private string _myId = "";
@@ -24,7 +29,7 @@ public class SignalRConnectionManager
         try
         {
             _connection = new HubConnectionBuilder()
-                .WithUrl(Common.ServerGameHub)
+                .WithUrl(ClientCommon.ServerGameHub)
                 //.WithAutomaticReconnect()
                 .Build();
 
@@ -35,14 +40,16 @@ public class SignalRConnectionManager
                 await StartConnection();
             };
 
-            _connection.On<string>("ReceiveMessage", message =>
+            _connection.On<string>(HubMsg.ToClient.ReceiveMessage, message =>
             {
                 Debug.Log($"Message from server: {message}");
             });
 
-            _connection.On<string>("MatchCreated", message =>
+            _connection.On<Room>(HubMsg.ToClient.MatchCreated, room =>
             {
-                Debug.Log($"MatchCreated: {message}");
+                Debug.Log($"MatchCreated: {room.Id}, {room.Players.Count}");
+
+                OnMatchCreated?.Invoke(room);
             });
 
             await StartConnection();
@@ -81,11 +88,11 @@ public class SignalRConnectionManager
 
     public async Task PlayerJoinQueue(Role role)
     {
-        await _connection.InvokeAsync("JoinQueue", role.ToString());
+        await _connection.InvokeAsync(HubMsg.ToServer.JoinQueue, role.ToString());
     }
 
     public async Task PlayerLeaveQueue()
     {
-        await _connection.InvokeAsync("LeaveQueue");
+        await _connection.InvokeAsync(HubMsg.ToServer.LeaveQueue);
     }
 }
