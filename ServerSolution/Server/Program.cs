@@ -1,10 +1,11 @@
+using Microsoft.Extensions.Logging;
 using Server.Helpers;
 using Server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
 //builder.Services.AddSignalR().AddJsonProtocol(o => { o.PayloadSerializerOptions.PropertyNamingPolicy = null; });
@@ -34,14 +35,16 @@ else
 
 builder.Services.AddSingleton<PlayerManager>();
 builder.Services.AddSingleton<MatchmakingManager>();
-
 var app = builder.Build();
 
-app.UseSwagger();
+Logger.LogFactory = app.Services.GetRequiredService<ILoggerFactory>();
+Logger.Init();
+
+//app.UseSwagger();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwaggerUI();
+    //app.UseSwaggerUI();
     app.UseDeveloperExceptionPage();
 }
 else

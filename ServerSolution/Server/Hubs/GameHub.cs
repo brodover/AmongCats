@@ -16,14 +16,15 @@ namespace Server.Hubs
             _playerM = manager;
             _matchmakingM = matchmakingM;
             _logger = logger;
-            _logger.LogInformation("Testing logger output.");
         }
 
-        public override Task OnConnectedAsync()
+        public async override Task OnConnectedAsync()
         {
             _logger.LogDebug("Client connected: {ConnectionId}", Context.ConnectionId);
-            _playerM.AddPlayer(Context.ConnectionId, new Player() { Id = Context.ConnectionId });
-            return base.OnConnectedAsync();
+            var player = new Player() { Id = Context.ConnectionId };
+            _playerM.AddPlayer(Context.ConnectionId, player);
+            await Clients.All.SendAsync(HubMsg.ToClient.PlayerConnected, player);
+            await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -42,7 +43,7 @@ namespace Server.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public Response JoinQueue(string role)
+        public Response JoinQueue(Common.Role role)
         {
             _logger.LogDebug("JoinQueue: {role}", role);
 

@@ -15,8 +15,8 @@ public class SignalRConnectionManager
 
     public event Action<Room> OnMatchCreated;
 
-    private List<PlayerConnection> _playerConnections = new List<PlayerConnection>();
-    private string _myId = "";
+    private Player _myPlayer = null;
+    private Room _myRoom = null;
 
     private HubConnection _connection;
 
@@ -25,7 +25,6 @@ public class SignalRConnectionManager
         if (_connection != null)
             return;
 
-        _myId = Guid.NewGuid().ToString();
         try
         {
             _connection = new HubConnectionBuilder()
@@ -45,10 +44,17 @@ public class SignalRConnectionManager
                 Debug.Log($"Message from server: {message}");
             });
 
+            _connection.On<Player>(HubMsg.ToClient.PlayerConnected, player =>
+            {
+                Debug.Log($"PlayerConnected: {player.Id}");
+                _myPlayer = player;
+            });
+
             _connection.On<Room>(HubMsg.ToClient.MatchCreated, room =>
             {
                 Debug.Log($"MatchCreated: {room.Id}, {room.Players.Count}");
 
+                _myRoom = room;
                 OnMatchCreated?.Invoke(room);
             });
 
@@ -66,9 +72,6 @@ public class SignalRConnectionManager
         {
             await _connection.StartAsync();
             Console.WriteLine("SignalR connected.");
-
-            // Send a test message
-            await _connection.InvokeAsync("SendMessage", "Hello from Unity!");
         }
         catch (Exception ex)
         {
@@ -88,7 +91,7 @@ public class SignalRConnectionManager
 
     public async Task PlayerJoinQueue(Role role)
     {
-        await _connection.InvokeAsync(HubMsg.ToServer.JoinQueue, role.ToString());
+        await _connection.InvokeAsync(HubMsg.ToServer.JoinQueue, role);
     }
 
     public async Task PlayerLeaveQueue()

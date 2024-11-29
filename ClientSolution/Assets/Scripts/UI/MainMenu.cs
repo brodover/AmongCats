@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using SharedLibrary;
 using TMPro;
@@ -65,21 +66,39 @@ public class MainMenu : MonoBehaviour
 
     private void OnGameStart()
     {
-        Debug.Log($"Game starting with role: {role}");
-        PlayerPrefs.SetString("PlayerRole", role.ToString());
-        SceneManager.LoadScene("GameScene");
+        try
+        {
+            Debug.Log($"Game starting with role: {role}");
+            PlayerPrefs.SetString("PlayerRole", role.ToString());
+            SceneManager.LoadScene("GameScene");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error: {ex.Message}");
+        }
+        
     }
 
     private void HandleMatchCreated(Room room)
     {
-        queueText.text = $"Starting match...";
-
-        OnGameStart();
+        try
+        {
+            Debug.Log($"HandleMatchCreated");
+            queueText.text = "Starting match...";
+            OnGameStart();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error: {ex.Message}");
+        }
     }
 
     private void OnEnable()
     {
-        SignalRConnectionManager.Instance.OnMatchCreated += HandleMatchCreated;
+        if (SignalRConnectionManager.Instance != null)
+        {
+            SignalRConnectionManager.Instance.OnMatchCreated += HandleMatchCreated;
+        }
     }
 
     private void OnDisable()

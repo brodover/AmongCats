@@ -24,8 +24,9 @@ namespace SharedLibrary
 
         public static class HubMsg
         {
-            public static class ToClient 
+            public static class ToClient
             {
+                public const string PlayerConnected = "PlayerConnected"; // temp
                 public const string ReceiveMessage = "ReceiveMessage"; // temp
                 public const string MatchCreated = "MatchCreated";
             }
