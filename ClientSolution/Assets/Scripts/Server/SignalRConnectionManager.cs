@@ -13,7 +13,7 @@ public class SignalRConnectionManager
     private static SignalRConnectionManager _instance;
     public static SignalRConnectionManager Instance => _instance ??= new SignalRConnectionManager();
 
-    public event Action<Room> OnMatchCreated;
+    public event Action OnMatchCreated;
 
     private Player _myPlayer = null;
     private Room _myRoom = null;
@@ -55,7 +55,7 @@ public class SignalRConnectionManager
                 Debug.Log($"MatchCreated: {room.Id}, {room.Players.Count}");
 
                 _myRoom = room;
-                OnMatchCreated?.Invoke(room);
+                OnMatchCreated?.Invoke();
             });
 
             await StartConnection();

@@ -10,6 +10,7 @@ using static SharedLibrary.Common;
 public class MainMenu : MonoBehaviour
 {
     private Role role = Role.Random;
+    private bool isMatched = false;
 
     public GameObject selectMenu;
     public GameObject queueMenu;
@@ -68,8 +69,8 @@ public class MainMenu : MonoBehaviour
     {
         try
         {
-            Debug.Log($"Game starting with role: {role}");
-            PlayerPrefs.SetString("PlayerRole", role.ToString());
+            Debug.Log($"Game starting");
+            queueText.text = "Starting match...";
             SceneManager.LoadScene("GameScene");
         }
         catch (Exception ex)
@@ -79,13 +80,12 @@ public class MainMenu : MonoBehaviour
         
     }
 
-    private void HandleMatchCreated(Room room)
+    private void HandleMatchCreated()
     {
         try
         {
             Debug.Log($"HandleMatchCreated");
-            queueText.text = "Starting match...";
-            OnGameStart();
+            isMatched = true;
         }
         catch (Exception ex)
         {
@@ -106,6 +106,15 @@ public class MainMenu : MonoBehaviour
         if (SignalRConnectionManager.Instance != null)
         {
             SignalRConnectionManager.Instance.OnMatchCreated -= HandleMatchCreated;
+        }
+    }
+
+    private void Update()
+    {
+        if (isMatched)
+        {
+            isMatched = false;
+            OnGameStart();
         }
     }
 }
