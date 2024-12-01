@@ -23,8 +23,8 @@ namespace Server.Hubs
             _logger.LogDebug("Client connected: {ConnectionId}", Context.ConnectionId);
             var player = new Player() { Id = Context.ConnectionId };
             _playerM.AddPlayer(Context.ConnectionId, player);
-            await Clients.All.SendAsync(HubMsg.ToClient.PlayerConnected, player);
             await base.OnConnectedAsync();
+            await Clients.Client(Context.ConnectionId).SendAsync(HubMsg.ToClient.PlayerConnected, player);
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -36,8 +36,8 @@ namespace Server.Hubs
             }
 
             //remove player from game/queue and server if disconnect
-            /*await LeaveGame();
-            LeaveQueue();*/
+            await LeaveGame();
+            LeaveQueue();
             _playerM.RemovePlayer(Context.ConnectionId);
 
             await base.OnDisconnectedAsync(exception);
@@ -55,7 +55,7 @@ namespace Server.Hubs
 
             player.Role = role;
 
-            _matchmakingM.AddToQueue(player);
+            _matchmakingM.AddToQueue(player, _playerM);
 
             return Response.Succeed();
         }
@@ -82,15 +82,17 @@ namespace Server.Hubs
             if (player.RoomId == string.Empty)
                 return Response.Fail(ServerError.NoRoomId);
 
-            player.RoomId = string.Empty;
-
-            var room = _matchmakingM.ActiveRooms.First(x => x.Id == player.RoomId);
+            var room = _matchmakingM.ActiveRooms.FirstOrDefault(x => x.Id == player.RoomId);
             if (room == null)
                 return Response.Fail(ServerError.NoActiveRoom);
+
+            await Clients.Group(player.RoomId).SendAsync(HubMsg.ToClient.MatchClosed, string.Empty);
 
             foreach (var roomPlayer in room.Players)
             {
                 roomPlayer.RoomId = string.Empty;
+                roomPlayer.Role = Role.None;
+                _playerM.UpdatePlayer(roomPlayer.Id, roomPlayer);
                 await Groups.RemoveFromGroupAsync(roomPlayer.Id, player.RoomId);
             }
 

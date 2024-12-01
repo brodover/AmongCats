@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8722886842417819111}
   - component: {fileID: 5941540865100756699}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Sprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -100,10 +100,8 @@ GameObject:
   - component: {fileID: 3037899547890197702}
   - component: {fileID: 3432564002260555428}
   - component: {fileID: 2649186344339188283}
-  - component: {fileID: 1725472473122562622}
-  - component: {fileID: 4373437577718923537}
   m_Layer: 9
-  m_Name: Player
+  m_Name: Human
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -118,7 +116,7 @@ Transform:
   m_GameObject: {fileID: 6747006811484886914}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.0683, y: -0.7271, z: -4.4058094}
+  m_LocalPosition: {x: -2, y: 0, z: 0}
   m_LocalScale: {x: 2.9790895, y: 2.2503052, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -226,40 +224,3 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 120
   m_CollisionDetection: 1
---- !u!114 &1725472473122562622
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6747006811484886914}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 78b4ce764465d8448a33b046edc33143, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 15
---- !u!114 &4373437577718923537
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6747006811484886914}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ea83155ef406db4ab3f04a6d101c6ae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ignoreMe:
-    serializedVersion: 2
-    m_Bits: 512
-  getRadius: 25
-  wallMask:
-    serializedVersion: 2
-    m_Bits: 1024
-  sceneObjects: []
-  lightRays: {fileID: 0}
-  offset: 0.05
-  showRed: 1
-  showGreen: 1

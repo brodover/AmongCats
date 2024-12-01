@@ -26,9 +26,10 @@ namespace SharedLibrary
         {
             public static class ToClient
             {
-                public const string PlayerConnected = "PlayerConnected"; // temp
+                public const string PlayerConnected = "PlayerConnected";
                 public const string ReceiveMessage = "ReceiveMessage"; // temp
                 public const string MatchCreated = "MatchCreated";
+                public const string MatchClosed = "MatchClosed";
             }
 
             public static class ToServer

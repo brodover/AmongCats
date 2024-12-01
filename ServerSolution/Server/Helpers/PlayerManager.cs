@@ -16,11 +16,18 @@ namespace Server.Helpers
 
         public Player RemovePlayer(string id)
         {
-            lock (_players)
+            _players.TryRemove(id, out var player);
+            return player;
+        }
+
+        public bool UpdatePlayer(string id, Player updatedPlayer)
+        {
+            if (_players.TryGetValue(id, out var player))
             {
-                _players.Remove(id, out var player);
-                return player;
+                return _players.TryUpdate(id, updatedPlayer, player);
             }
+
+            return false;
         }
     }
 }

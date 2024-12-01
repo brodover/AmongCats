@@ -15,8 +15,12 @@ public class SignalRConnectionManager
 
     public event Action OnMatchCreated;
 
-    private Player _myPlayer = null;
-    private Room _myRoom = null;
+    private static Player _myPlayer = null;
+
+    public static Player MyPlayer => _myPlayer;
+
+    private static Room _myRoom = null;
+    public static Room MyRoom => _myRoom;
 
     private HubConnection _connection;
 
@@ -56,6 +60,12 @@ public class SignalRConnectionManager
 
                 _myRoom = room;
                 OnMatchCreated?.Invoke();
+            });
+
+            _connection.On<string>(HubMsg.ToClient.MatchClosed, message =>
+            {
+                Debug.Log($"MatchClosed: {message}");
+                // leave game
             });
 
             await StartConnection();

@@ -25,7 +25,7 @@ namespace Server.Helpers
             _hubContext = hubContext;
         }
 
-        public bool AddToQueue(Player player)
+        public bool AddToQueue(Player player, PlayerManager playerManager)
         {
             RemoveFromQueue(player);
 
@@ -56,7 +56,7 @@ namespace Server.Helpers
 
             var players = TryMatchPlayers();
             if (players != null)
-                TryCreateRoom(players);
+                TryCreateRoom(players, playerManager);
 
             return true;
         }
@@ -156,7 +156,7 @@ namespace Server.Helpers
         }
 
         // called when WaitingPlayers is locked already
-        private async void TryCreateRoom(List<Player> players)
+        private async void TryCreateRoom(List<Player> players, PlayerManager playerManager)
         {
             Logger.Default.LogDebug("TryCreateRoom");
             Room room = new Room { Id = Guid.NewGuid().ToString(), Players = players };
@@ -167,6 +167,7 @@ namespace Server.Helpers
                 foreach (var player in room.Players)
                 {
                     player.RoomId = room.Id;
+                    playerManager.UpdatePlayer(player.Id, player);
                     await _hubContext.Groups.AddToGroupAsync(player.Id, room.Id);
                 }
 
@@ -189,6 +190,7 @@ namespace Server.Helpers
                 if (!_activeRooms.Contains(room))
                     _activeRooms.Add(room);
             }
+            Logger.Default.LogDebug($"AddRoom: {_activeRooms.Count}");
         }
 
         public void RemoveRoom(Room room)
@@ -198,6 +200,7 @@ namespace Server.Helpers
                 if (!_activeRooms.Contains(room))
                     _activeRooms.Add(room);
             }
+            Logger.Default.LogDebug($"RemoveRoom: {_activeRooms.Count}");
         }
     }
 
