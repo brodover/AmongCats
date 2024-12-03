@@ -1,12 +1,13 @@
 using NUnit.Framework;
+using SharedLibrary;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField]
-    private GameObject lightRays; //the light game object.
+    private GameObject mainCamera;
     [SerializeField]
-    private GameObject human;
+    private GameObject lightRays;
 
     private GameObject myPlayer;
     private GameObject otherPlayer;
@@ -15,7 +16,11 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         if (SignalRConnectionManager.MyRoom == null || SignalRConnectionManager.MyPlayer == null)
-            throw new System.Exception("SignalRConnectionManager is null");
+        {
+            SignalRConnectionManager.InitializeConnectionTest();
+            //throw new System.Exception("SignalRConnectionManager is null");
+        }
+
 
         var humanPrefab = Resources.Load<GameObject>("Prefabs/Human");
         var catPrefab = Resources.Load<GameObject>("Prefabs/Cat");
@@ -46,11 +51,11 @@ public class GameManager : MonoBehaviour
             {
                 myPlayer = clone;
                 myPlayer.AddComponent<Move>();
-                //myPlayer.AddComponent<CameraFollow>();
-                //myPlayer.GetComponent<CameraFollow>().target = myPlayer.transform;
                 myPlayer.AddComponent<lightcaster>();
                 myPlayer.GetComponent<lightcaster>().lightRays = lightRays;
                 myPlayer.GetComponentInChildren<SpriteRenderer>().sortingOrder = 2;
+
+                mainCamera.GetComponent<CameraFollow>().target = myPlayer.transform;
             }
             else
                 otherPlayer = clone;

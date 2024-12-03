@@ -24,6 +24,31 @@ public class SignalRConnectionManager
 
     private HubConnection _connection;
 
+    public static void InitializeConnectionTest()
+    {
+        _myPlayer = new Player
+        {
+            Id = "1",
+            Role = Role.Human,
+            RoomId = "100",
+        };
+
+        var otherPlayer = new Player
+        {
+            Id = "2",
+            Role = Role.Cat,
+            RoomId = "100"
+        };
+        
+        var players = new List<Player> { _myPlayer, otherPlayer };
+
+        _myRoom = new Room
+        {
+            Id = "100",
+            Players = players
+        };
+    }
+
     public async Task InitializeConnection()
     {
         if (_connection != null)
