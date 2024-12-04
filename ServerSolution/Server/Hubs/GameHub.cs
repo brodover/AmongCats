@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System.Numerics;
+using Microsoft.AspNetCore.SignalR;
 using Server.Helpers;
 using SharedLibrary;
 using static SharedLibrary.Common;
@@ -101,11 +102,22 @@ namespace Server.Hubs
             return Response.Succeed();
         }
 
+        public Response Move(Player rPlayer)
+        {
+            if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
+                return Response.Fail(ServerError.NoPlayer);
+
+            player.Position = new Vector3(rPlayer.Position.X, rPlayer.Position.Y, rPlayer.Position.Z);
+            player.IsFaceLeft = rPlayer.IsFaceLeft;
+
+            return Response.Succeed();
+        }
+
         public async Task SendMessage(string message)
         {
             _logger.LogDebug("SendMessage: {message}", message);
 
-            await Clients.All.SendAsync(HubMsg.ToClient.ReceiveMessage, message);
+            await Clients.All.SendAsync(HubMsg.ToClient.MessageReceived, message);
         }
 
     }

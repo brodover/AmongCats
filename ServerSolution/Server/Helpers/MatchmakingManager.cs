@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Server.Hubs;
+using Server.Models;
 using SharedLibrary;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
@@ -11,8 +12,8 @@ namespace Server.Helpers
     public class MatchmakingManager
     {
         // completed rooms
-        public IReadOnlyList<Room> ActiveRooms => _activeRooms;
-        private readonly List<Room> _activeRooms = new();
+        public IReadOnlyList<ServerRoom> ActiveRooms => _activeRooms;
+        private readonly List<ServerRoom> _activeRooms = new();
 
         private ConcurrentQueue<Player> WaitingHumans = new(); // humans in queue
         private ConcurrentQueue<Player> WaitingCats = new(); // cats in queue
@@ -159,7 +160,7 @@ namespace Server.Helpers
         private async void TryCreateRoom(List<Player> players, PlayerManager playerManager)
         {
             Logger.Default.LogDebug("TryCreateRoom");
-            Room room = new Room { Id = Guid.NewGuid().ToString(), Players = players };
+            var room = new ServerRoom { Id = Guid.NewGuid().ToString(), Players = players };
 
             // add each player to game and notify players
             if (room?.Players.Count >= Room.MaxPlayers)
@@ -183,23 +184,25 @@ namespace Server.Helpers
             }
         }
 
-        public void AddRoom(Room room)
+        public void AddRoom(ServerRoom room)
         {
             lock (_activeRooms)
             {
                 if (!_activeRooms.Contains(room))
                     _activeRooms.Add(room);
             }
+            room.StartRoom();
             Logger.Default.LogDebug($"AddRoom: {_activeRooms.Count}");
         }
 
-        public void RemoveRoom(Room room)
+        public void RemoveRoom(ServerRoom room)
         {
             lock (_activeRooms)
             {
-                if (!_activeRooms.Contains(room))
-                    _activeRooms.Add(room);
+                if (_activeRooms.Contains(room))
+                    _activeRooms.Remove(room);
             }
+            room.StopRoom();
             Logger.Default.LogDebug($"RemoveRoom: {_activeRooms.Count}");
         }
     }
