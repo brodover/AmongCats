@@ -1,3 +1,6 @@
+using System.Numerics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Server.Helpers;
 using Server.Hubs;
@@ -7,8 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();
 
-builder.Services.AddSignalR();
-//builder.Services.AddSignalR().AddJsonProtocol(o => { o.PayloadSerializerOptions.PropertyNamingPolicy = null; });
+builder.Services.AddSignalR().AddJsonProtocol(o => { o.PayloadSerializerOptions.PropertyNamingPolicy = null; });
 
 /*builder.Services.AddCors(options => options.AddPolicy("CorsPolicy",
         x =>
@@ -69,3 +71,37 @@ app.MapControllers();
 app.MapHub<GameHub>("/GameHub");
 
 app.Run();
+
+
+public class Vector3JsonConverter : System.Text.Json.Serialization.JsonConverter<Vector3>
+{
+    public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        float x = 0, y = 0, z = 0;
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonTokenType.EndObject) break;
+            if (reader.TokenType == JsonTokenType.PropertyName)
+            {
+                var propertyName = reader.GetString();
+                reader.Read();
+                switch (propertyName)
+                {
+                    case "X": x = reader.GetSingle(); break;
+                    case "Y": y = reader.GetSingle(); break;
+                    case "Z": z = reader.GetSingle(); break;
+                }
+            }
+        }
+        return new Vector3(x, y, z);
+    }
+
+    public override void Write(Utf8JsonWriter writer, Vector3 value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        writer.WriteNumber("X", value.X);
+        writer.WriteNumber("Y", value.Y);
+        writer.WriteNumber("Z", value.Z);
+        writer.WriteEndObject();
+    }
+}

@@ -14,6 +14,8 @@ public class SignalRConnectionManager
     public static SignalRConnectionManager Instance => _instance ??= new SignalRConnectionManager();
 
     public event Action OnMatchCreated;
+    public event Action OnMatchClosed;
+    public event Action OnPlayerMoveUpdated;
 
     private static Player _myPlayer = null;
 
@@ -68,9 +70,9 @@ public class SignalRConnectionManager
                 await StartConnection();
             };
 
-            _connection.On<string>(HubMsg.ToClient.ReceiveMessage, message =>
+            _connection.On<string>(HubMsg.ToClient.MessageReceived, message =>
             {
-                Debug.Log($"Message from server: {message}");
+                Debug.Log($"MessageReceived: {message}");
             });
 
             _connection.On<Player>(HubMsg.ToClient.PlayerConnected, player =>
@@ -90,7 +92,20 @@ public class SignalRConnectionManager
             _connection.On<string>(HubMsg.ToClient.MatchClosed, message =>
             {
                 Debug.Log($"MatchClosed: {message}");
-                // leave game
+
+                _myRoom = null;
+                OnMatchClosed?.Invoke();
+            });
+
+            _connection.On<List<Player>>(HubMsg.ToClient.PlayerMoveUpdated, players =>
+            {
+                Debug.Log($"PlayerMoveUpdated: {players}");
+
+                if (_myRoom == null)
+                    return;
+
+                _myRoom.Players = players;
+                OnPlayerMoveUpdated?.Invoke();
             });
 
             await StartConnection();
@@ -116,21 +131,39 @@ public class SignalRConnectionManager
 
     public async Task Disconnect()
     {
-        if (_connection != null)
-        {
-            await _connection.StopAsync();
-            await _connection.DisposeAsync();
-            _connection = null;
-        }
+        if (_connection == null)
+            return;
+
+        await _connection.StopAsync();
+        await _connection.DisposeAsync();
+        _connection = null;
     }
 
     public async Task PlayerJoinQueue(Role role)
     {
+        if (_connection == null)
+            return;
+
         await _connection.InvokeAsync(HubMsg.ToServer.JoinQueue, role);
     }
 
     public async Task PlayerLeaveQueue()
     {
+        if (_connection == null)
+            return;
+
         await _connection.InvokeAsync(HubMsg.ToServer.LeaveQueue);
+    }
+
+    public async Task PlayerMove(float posX, float posY, float posZ, bool isFaceRight)
+    {
+        if (_connection == null)
+            return;
+
+        _myPlayer.Position = new System.Numerics.Vector3(posX, posY, posZ);
+        _myPlayer.IsFaceRight = isFaceRight;
+
+        Debug.Log($"MovePlayer Send: {_myPlayer.Position.X}");
+        await _connection.InvokeAsync(HubMsg.ToServer.MovePlayer, _myPlayer);
     }
 }

@@ -35,8 +35,8 @@ public class MainMenu : MonoBehaviour
 
     private async void OnSelect(Role role)
     {
-        OnGameStart();
-        /*this.role = role;
+        //OnGameStart();
+        this.role = role;
         queueText.text = $"Queuing as {role}";
         cancelButton.gameObject.SetActive(false);
         ShowSelectMenu(false);
@@ -45,7 +45,7 @@ public class MainMenu : MonoBehaviour
         StartCoroutine(Wait1Sec());
 
         cancelButton.gameObject.SetActive(true);
-        await SignalRConnectionManager.Instance.PlayerJoinQueue(role)*/;
+        await SignalRConnectionManager.Instance.PlayerJoinQueue(role);
     }
 
     IEnumerator Wait1Sec()

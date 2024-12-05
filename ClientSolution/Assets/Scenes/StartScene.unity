@@ -653,7 +653,7 @@ GameObject:
   - component: {fileID: 613852124}
   - component: {fileID: 613852123}
   m_Layer: 5
-  m_Name: Hooman Button
+  m_Name: Human Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2104,7 +2104,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Hooman
+  m_text: 'Human
 
 '
   m_isRightToLeft: 0

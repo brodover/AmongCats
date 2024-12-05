@@ -102,13 +102,24 @@ namespace Server.Hubs
             return Response.Succeed();
         }
 
-        public Response Move(Player rPlayer)
+        public Response MovePlayer(Player uPlayer)
         {
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
                 return Response.Fail(ServerError.NoPlayer);
 
-            player.Position = new Vector3(rPlayer.Position.X, rPlayer.Position.Y, rPlayer.Position.Z);
-            player.IsFaceLeft = rPlayer.IsFaceLeft;
+            var room = _matchmakingM.ActiveRooms.FirstOrDefault(x => x.Id == player.RoomId);
+            if (room == null)
+                return Response.Fail(ServerError.NoActiveRoom);
+
+            var rplayer = room.Players.FirstOrDefault(x => x.Id == uPlayer.Id);
+            if (rplayer == null)
+                return Response.Fail(ServerError.NoPlayer);
+
+            rplayer.Position = new Vector3(uPlayer.Position.X, uPlayer.Position.Y, uPlayer.Position.Z);
+            rplayer.IsFaceRight = uPlayer.IsFaceRight;
+
+            var rplayer1 = room.Players.FirstOrDefault(x => x.Id == uPlayer.Id);
+            Logger.Default.LogDebug($"MovePlayer {Context.ConnectionId}: {uPlayer.Position.X}, {rplayer1.Position.X}");
 
             return Response.Succeed();
         }

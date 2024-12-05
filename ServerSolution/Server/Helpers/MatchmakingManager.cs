@@ -21,6 +21,8 @@ namespace Server.Helpers
 
         private readonly IHubContext<GameHub> _hubContext;
 
+        PlayerManager playerManager;
+
         public MatchmakingManager(IHubContext<GameHub> hubContext)
         {
             _hubContext = hubContext;
@@ -191,7 +193,7 @@ namespace Server.Helpers
                 if (!_activeRooms.Contains(room))
                     _activeRooms.Add(room);
             }
-            room.StartRoom();
+            room.StartRoom(_hubContext);
             Logger.Default.LogDebug($"AddRoom: {_activeRooms.Count}");
         }
 
