@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Assets.Scripts.Game;
 using NUnit.Framework;
 using SharedLibrary;
 using UnityEngine;
@@ -55,7 +56,7 @@ public class GameManager : MonoBehaviour
             if (player.Id == SignalRConnectionManager.MyPlayer.Id)
             {
                 myPlayer = clone;
-                myPlayer.AddComponent<Move>();
+                myPlayer.AddComponent<MoveInput>();
                 myPlayer.AddComponent<lightcaster>();
                 myPlayer.GetComponent<lightcaster>().lightRays = lightRays;
                 myPlayer.GetComponentInChildren<SpriteRenderer>().sortingOrder = 2;
@@ -63,7 +64,11 @@ public class GameManager : MonoBehaviour
                 mainCamera.GetComponent<CameraFollow>().target = myPlayer.transform;
             }
             else
+            {
                 otherPlayer = clone;
+                otherPlayer.AddComponent<MoveRemote>();
+            }
+                
         }
     }
 
@@ -78,14 +83,6 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError($"Error: {ex.Message}");
         }
-    }
-
-    private void HandlePlayerMoveUpdated()
-    {
-        var otherP = SignalRConnectionManager.MyRoom.Players.FirstOrDefault(p => p.Id != SignalRConnectionManager.MyPlayer.Id);
-        Debug.Log($"HandlePlayerMoveUpdated: {otherP.Position.X}");
-        otherPlayer.transform.SetPositionAndRotation(new Vector3(otherP.Position.X, otherP.Position.Y, otherP.Position.Z), Quaternion.identity);
-        otherPlayer.GetComponentInChildren<SpriteRenderer>().flipX = otherP.IsFaceRight;
     }
 
     private void OnGameClose()
@@ -128,7 +125,6 @@ public class GameManager : MonoBehaviour
         if (SignalRConnectionManager.Instance != null)
         {
             SignalRConnectionManager.Instance.OnMatchClosed += HandleMatchClosed;
-            SignalRConnectionManager.Instance.OnPlayerMoveUpdated += HandlePlayerMoveUpdated;
         }
     }
 
@@ -137,7 +133,6 @@ public class GameManager : MonoBehaviour
         if (SignalRConnectionManager.Instance != null)
         {
             SignalRConnectionManager.Instance.OnMatchClosed -= HandleMatchClosed;
-            SignalRConnectionManager.Instance.OnPlayerMoveUpdated += HandlePlayerMoveUpdated;
         }
     }
 

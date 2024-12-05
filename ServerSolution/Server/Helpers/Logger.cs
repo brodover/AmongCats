@@ -1,4 +1,6 @@
-﻿namespace Server.Helpers
+﻿using SharedLibrary;
+
+namespace Server.Helpers
 {
     public static class Logger
     {
@@ -11,6 +13,12 @@
         {
             _default = LogFactory.CreateLogger("Logger");
             _default.LogDebug("Init Logger");
+        }
+
+        public static Response LogFail(this Response res)
+        {
+            _default.LogDebug($"Fail: {res.Message}");
+            return res;
         }
     }
 }

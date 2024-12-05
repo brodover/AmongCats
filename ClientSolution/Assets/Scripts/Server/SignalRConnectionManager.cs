@@ -99,10 +99,9 @@ public class SignalRConnectionManager
 
             _connection.On<List<Player>>(HubMsg.ToClient.PlayerMoveUpdated, players =>
             {
-                Debug.Log($"PlayerMoveUpdated: {players}");
-
                 if (_myRoom == null)
                     return;
+                Debug.Log($"PlayerMoveUpdated");
 
                 _myRoom.Players = players;
                 OnPlayerMoveUpdated?.Invoke();
@@ -163,7 +162,6 @@ public class SignalRConnectionManager
         _myPlayer.Position = new System.Numerics.Vector3(posX, posY, posZ);
         _myPlayer.IsFaceRight = isFaceRight;
 
-        Debug.Log($"MovePlayer Send: {_myPlayer.Position.X}");
         await _connection.InvokeAsync(HubMsg.ToServer.MovePlayer, _myPlayer);
     }
 }

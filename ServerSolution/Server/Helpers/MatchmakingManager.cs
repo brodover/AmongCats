@@ -92,7 +92,6 @@ namespace Server.Helpers
             }
         }
 
-        // called when WaitingPlayers is locked already
         private List<Player> TryMatchPlayers()
         {
             Logger.Default.LogDebug("TryMatchPlayers");

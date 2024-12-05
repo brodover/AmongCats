@@ -46,13 +46,13 @@ namespace Server.Hubs
 
         public Response JoinQueue(Common.Role role)
         {
-            _logger.LogDebug("JoinQueue: {role}", role);
+            _logger.LogDebug("Receive JoinQueue: {role}", role);
 
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer).LogFail();
 
             if (player.RoomId != string.Empty)
-                return Response.Fail(ServerError.AlrInMatch);
+                return Response.Fail(ServerError.AlrInMatch).LogFail();
 
             player.Role = role;
 
@@ -63,10 +63,10 @@ namespace Server.Hubs
 
         public Response LeaveQueue()
         {
-            _logger.LogDebug("LeaveQueue");
+            _logger.LogDebug("Receive LeaveQueue");
 
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer).LogFail();
 
             _matchmakingM.RemoveFromQueue(player);
 
@@ -75,17 +75,17 @@ namespace Server.Hubs
 
         public async Task<Response> LeaveGame()
         {
-            _logger.LogDebug("LeaveGame");
+            _logger.LogDebug("Receive LeaveGame");
 
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer).LogFail();
 
             if (player.RoomId == string.Empty)
-                return Response.Fail(ServerError.NoRoomId);
+                return Response.Fail(ServerError.NoRoomId).LogFail();
 
             var room = _matchmakingM.ActiveRooms.FirstOrDefault(x => x.Id == player.RoomId);
             if (room == null)
-                return Response.Fail(ServerError.NoActiveRoom);
+                return Response.Fail(ServerError.NoActiveRoom).LogFail();
 
             await Clients.Group(player.RoomId).SendAsync(HubMsg.ToClient.MatchClosed, string.Empty);
 
@@ -104,29 +104,30 @@ namespace Server.Hubs
 
         public Response MovePlayer(Player uPlayer)
         {
+            _logger.LogDebug($"Receive MovePlayer {Context.ConnectionId}: {uPlayer.Position.X}");
+
             if (!_playerM.Players.TryGetValue(Context.ConnectionId, out var player))
-                return Response.Fail(ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer).LogFail();
 
             var room = _matchmakingM.ActiveRooms.FirstOrDefault(x => x.Id == player.RoomId);
             if (room == null)
-                return Response.Fail(ServerError.NoActiveRoom);
+                return Response.Fail(ServerError.NoActiveRoom).LogFail();
 
             var rplayer = room.Players.FirstOrDefault(x => x.Id == uPlayer.Id);
             if (rplayer == null)
-                return Response.Fail(ServerError.NoPlayer);
+                return Response.Fail(ServerError.NoPlayer).LogFail();
 
             rplayer.Position = new Vector3(uPlayer.Position.X, uPlayer.Position.Y, uPlayer.Position.Z);
             rplayer.IsFaceRight = uPlayer.IsFaceRight;
 
             var rplayer1 = room.Players.FirstOrDefault(x => x.Id == uPlayer.Id);
-            Logger.Default.LogDebug($"MovePlayer {Context.ConnectionId}: {uPlayer.Position.X}, {rplayer1.Position.X}");
 
             return Response.Succeed();
         }
 
         public async Task SendMessage(string message)
         {
-            _logger.LogDebug("SendMessage: {message}", message);
+            _logger.LogDebug($"Receive SendMessage: {message}");
 
             await Clients.All.SendAsync(HubMsg.ToClient.MessageReceived, message);
         }

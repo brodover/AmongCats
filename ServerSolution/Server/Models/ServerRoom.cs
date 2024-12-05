@@ -9,7 +9,7 @@ namespace Server.Models
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        private const int UPDATE_DELAY_MILISECOND = 200; // 100ms = 10hz
+        private const int UPDATE_DELAY_MILISECOND = 500; // 100ms = 10hz
 
         public void StartRoom(IHubContext<GameHub> hubContext)
         {
@@ -21,7 +21,6 @@ namespace Server.Models
                 {
                     try
                     {
-                        Logger.Default.LogDebug("ServerRoom Sending PlayerMoveUpdated");
                         _ = hubContext.Clients.Group(Id).SendAsync(Common.HubMsg.ToClient.PlayerMoveUpdated, Players);
                         await Task.Delay(UPDATE_DELAY_MILISECOND);
                     }
