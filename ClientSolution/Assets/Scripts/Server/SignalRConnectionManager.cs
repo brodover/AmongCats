@@ -159,6 +159,8 @@ public class SignalRConnectionManager
         if (_connection == null)
             return;
 
+        Debug.Log("Send PlayerMove");
+
         _myPlayer.Position = new System.Numerics.Vector3(posX, posY, posZ);
         _myPlayer.IsFaceRight = isFaceRight;
 

@@ -1,38 +1,61 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Windows;
 
 namespace Assets.Scripts.Game
 {
     public class MoveInput : MonoBehaviour
     {
         public float moveSpeed = 15;
-        private Vector3 moveInput;
+        private Vector2 _moveInput2;
+        private Vector3 _moveInput3;
+        private InputSystem_Actions _playerInput;
+
         private Rigidbody rb;
         private SpriteRenderer sr;
 
         private const int UPDATE_DELAY_MILISECOND = 250; // 50ms = 20hz
         private DateTime _lastUpdate;
+        private Vector3 _lastPos;
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
             sr = GetComponentInChildren<SpriteRenderer>();
-            moveInput = Vector3.zero;
+
+            _moveInput2 = Vector2.zero;
+            _moveInput3 = Vector3.zero;
+            _playerInput = new InputSystem_Actions();
             _lastUpdate = DateTime.Now;
+        }
+
+        private void OnEnable()
+        {
+            if (_playerInput == null)
+                _playerInput = new InputSystem_Actions();
+            _playerInput.Enable(); // Enable the input system.
+        }
+
+        private void OnDisable()
+        {
+            _playerInput.Disable(); // Disable the input system.
         }
 
         private async void Update()
         {
-            moveInput.x = Input.GetAxisRaw("Horizontal");
-            moveInput.y = Input.GetAxisRaw("Vertical");
+            _moveInput2 = _playerInput.Player.Move.ReadValue<Vector2>();
 
-            rb.MovePosition(rb.position +
-                 (moveInput.normalized * moveSpeed *
-                  Time.deltaTime));
+            if (_moveInput2.x == 0 && _moveInput2.y == 0)
+                return;
 
-            if (sr.flipX && moveInput.x < 0)
+            _moveInput3.x = _moveInput2.x;
+            _moveInput3.y = _moveInput2.y;
+            rb.MovePosition(rb.position + (_moveInput3.normalized * moveSpeed * Time.deltaTime));
+
+            if (sr.flipX && _moveInput3.x < 0)
                 sr.flipX = false;
-            else if (!sr.flipX && moveInput.x > 0)
+            else if (!sr.flipX && _moveInput3.x > 0)
                 sr.flipX = true;
 
             if (DateTime.Now > _lastUpdate)

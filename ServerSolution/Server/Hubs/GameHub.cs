@@ -119,8 +119,7 @@ namespace Server.Hubs
 
             rplayer.Position = new Vector3(uPlayer.Position.X, uPlayer.Position.Y, uPlayer.Position.Z);
             rplayer.IsFaceRight = uPlayer.IsFaceRight;
-
-            var rplayer1 = room.Players.FirstOrDefault(x => x.Id == uPlayer.Id);
+            room.UpdateRoom();
 
             return Response.Succeed();
         }
