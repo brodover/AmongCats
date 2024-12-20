@@ -58,11 +58,11 @@ namespace Assets.Scripts.Game
             else if (!sr.flipX && _moveInput3.x > 0)
                 sr.flipX = true;
 
-            if (DateTime.Now > _lastUpdate)
+            /*if (DateTime.Now > _lastUpdate)
             {
                 await SignalRConnectionManager.Instance.PlayerMove(rb.position.x, rb.position.y, rb.position.z, sr.flipX);
                 _lastUpdate = DateTime.Now.AddMilliseconds(UPDATE_DELAY_MILISECOND);
-            }
+            }*/
         }
     }
 }

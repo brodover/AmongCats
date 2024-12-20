@@ -28,17 +28,13 @@ public class SignalRConnectionManager
 
     public static void InitializeConnectionTest()
     {
-        _myPlayer = new Player
-        {
-            Id = "1",
-            Role = Role.Human,
-            RoomId = "100",
-        };
+        if (_myPlayer == null)
+            InitMyPlayerTest();
 
         var otherPlayer = new Player
         {
             Id = "2",
-            Role = Role.Cat,
+            Role = _myPlayer.Role == Role.Human ? Role.Cat : Role.Human,
             RoomId = "100"
         };
         
@@ -48,6 +44,16 @@ public class SignalRConnectionManager
         {
             Id = "100",
             Players = players
+        };
+    }
+
+    private static void InitMyPlayerTest(Role role = Role.Human)
+    {
+        _myPlayer = new Player
+        {
+            Id = "1",
+            Role = role,
+            RoomId = "100",
         };
     }
 
@@ -117,6 +123,9 @@ public class SignalRConnectionManager
 
     private async Task StartConnection()
     {
+        if (_connection == null)
+            return;
+
         try
         {
             await _connection.StartAsync();
@@ -142,6 +151,13 @@ public class SignalRConnectionManager
     {
         if (_connection == null)
             return;
+
+        if (_connection.State != HubConnectionState.Connected)
+        {
+            InitMyPlayerTest(role);
+            OnMatchCreated?.Invoke();
+            return;
+        }
 
         await _connection.InvokeAsync(HubMsg.ToServer.JoinQueue, role);
     }
