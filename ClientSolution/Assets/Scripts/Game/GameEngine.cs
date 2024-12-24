@@ -1,77 +1,78 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Assets.Scripts.Game;
 using NUnit.Framework;
 using SharedLibrary;
 using Unity.Netcode;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using static SharedLibrary.Common;
+using static SharedLibrary.Common.HubMsg;
 
-public class GameEngine : MonoBehaviour
+public class GameEngine : NetworkBehaviour
 {
-    [SerializeField]
-    private GameObject mainCamera;
-    [SerializeField]
-    private GameObject lightRays;
-
-    private GameObject myPlayer;
-    private GameObject otherPlayer;
-
     private bool isClosed = false;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         if (SignalRConnectionManager.MyRoom == null || SignalRConnectionManager.MyPlayer == null)
         {
             SignalRConnectionManager.InitializeConnectionTest();
             //throw new System.Exception("SignalRConnectionManager is null");
         }
 
-        var humanPrefab = Resources.Load<GameObject>("Prefabs/Human");
-        var catPrefab = Resources.Load<GameObject>("Prefabs/Cat");
-
-        foreach (var player in SignalRConnectionManager.MyRoom.Players)
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
-            if (player == null) continue;
-            GameObject clone;
-            if (player.Role == SharedLibrary.Common.Role.Human)
+            Debug.Log($"OnNetworkSpawn: {NetworkManager.Singleton.IsListening}, {IsServer}, {IsClient}");
+            if (IsServer)
             {
-                clone = Instantiate(humanPrefab);
-                clone.transform.position = new Vector3(-2.0f, 0, 0);
-                Debug.Log($"Human: {player.Id} == {SignalRConnectionManager.MyPlayer.Id}");
-            }
-            else if (player.Role == SharedLibrary.Common.Role.Cat)
-            {
-                clone = Instantiate(catPrefab);
-                clone.transform.position = new Vector3(2.0f, 0, 0);
-                Debug.Log($"Cat: {player.Id} == {SignalRConnectionManager.MyPlayer.Id}");
+                NetworkManager.Singleton.OnClientConnectedCallback += (clientId) =>
+                {
+                    Debug.Log($"Client {clientId} connected. Ensuring scene is ready before spawning objects.");
+                    SpawnPlayer(SignalRConnectionManager.MyPlayer.Role, NetworkManager.ServerClientId);
+                };
             }
             else
             {
-                continue;
+                RequestSpawnPlayerServerRpc(NetworkManager.Singleton.LocalClientId);
             }
-            clone.transform.SetParent(this.transform);
-
-            if (player.Id == SignalRConnectionManager.MyPlayer.Id)
-            {
-                myPlayer = clone;
-                myPlayer.AddComponent<MoveInput>();
-                myPlayer.AddComponent<lightcaster>();
-                myPlayer.GetComponent<lightcaster>().lightRays = lightRays;
-                myPlayer.GetComponentInChildren<SpriteRenderer>().sortingOrder = 2;
-                var playerNO = myPlayer.GetComponent<NetworkObject>();
-                playerNO.SpawnAsPlayerObject(NetworkManager.ServerClientId, true);
-
-                mainCamera.GetComponent<CameraFollow>().target = myPlayer.transform;
-            }
-            else
-            {
-                otherPlayer = clone;
-                otherPlayer.AddComponent<MoveRemote>();
-            }
-                
         }
+        else
+            Debug.LogError("NetworkManager is not in this scene.");
+    }
+
+    private void SpawnPlayer(Role role, ulong clientId)
+    {
+        Debug.Log($"mup SpawnPlayer: {role}, {clientId}");
+        GameObject clone;
+        if (role == Common.Role.Human)
+        {
+            clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.HumanPrefab));
+            clone.transform.position = new Vector3(-2.0f, 0, 0);
+
+        }
+        else if (role == Common.Role.Cat)
+        {
+            clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
+            clone.transform.position = new Vector3(2.0f, 0, 0);
+        }
+        else {
+            return;
+        }
+        clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void RequestSpawnPlayerServerRpc(ulong clientId)
+    {
+        Debug.Log($"Spawning player for client {clientId}, {IsServer}");
+        if (!IsServer) return;
+
+        SpawnPlayer(Role.Cat, clientId);
     }
 
     private void HandleMatchClosed()
@@ -107,18 +108,6 @@ public class GameEngine : MonoBehaviour
         {
             isClosed = false;
             OnGameClose();
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (myPlayer != null)
-        {
-            Destroy(myPlayer);
-        }
-        if (otherPlayer != null)
-        {
-            Destroy(otherPlayer);
         }
     }
 

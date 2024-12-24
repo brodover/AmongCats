@@ -72,7 +72,7 @@ public class MainMenu : MonoBehaviour
         {
             Debug.Log($"Game starting");
             queueText.text = "Starting match...";
-            SceneManager.LoadScene("GameScene");
+            SceneManager.LoadScene(ClientCommon.Scene.Game);
         }
         catch (Exception ex)
         {

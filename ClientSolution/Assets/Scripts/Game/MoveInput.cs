@@ -42,7 +42,7 @@ namespace Assets.Scripts.Game
             _playerInput.Disable(); // Disable the input system.
         }
 
-        private async void Update()
+        private void Update()
         {
             _moveInput2 = _playerInput.Player.Move.ReadValue<Vector2>();
 

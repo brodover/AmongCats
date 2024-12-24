@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SharedLibrary;
 using Unity.Burst.Intrinsics;
+using Unity.Netcode;
 using UnityEngine;
 using static ClientCommon;
 using static SharedLibrary.Common;
@@ -92,6 +94,14 @@ public class SignalRConnectionManager
                 Debug.Log($"MatchCreated: {room.Id}, {room.Players.Count}");
 
                 _myRoom = room;
+                var myPlayer = room.Players.FirstOrDefault(p => p.Id == _myPlayer.Id);
+                if (myPlayer == null)
+                {
+                    Debug.Log("My Player not found. Can't start match.");
+                    return;
+                }
+
+                _myPlayer = myPlayer;
                 OnMatchCreated?.Invoke();
             });
 
