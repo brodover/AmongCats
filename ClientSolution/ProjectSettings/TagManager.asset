@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Ddol
   - LightMask
+  - Human
+  - Cat
   layers:
   - Default
   - TransparentFX

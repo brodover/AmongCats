@@ -14,6 +14,7 @@ using static SharedLibrary.Common.HubMsg;
 public class GameEngine : NetworkBehaviour
 {
     private bool isClosed = false;
+    private int clientCount = 0;
 
     public override void OnNetworkSpawn()
     {
@@ -30,10 +31,16 @@ public class GameEngine : NetworkBehaviour
             Debug.Log($"OnNetworkSpawn: {NetworkManager.Singleton.IsListening}, {IsServer}, {IsClient}");
             if (IsServer)
             {
+                SpawnPlayer(SignalRConnectionManager.MyPlayer.Role, NetworkManager.ServerClientId);
+                
                 NetworkManager.Singleton.OnClientConnectedCallback += (clientId) =>
                 {
-                    Debug.Log($"Client {clientId} connected. Ensuring scene is ready before spawning objects.");
-                    SpawnPlayer(SignalRConnectionManager.MyPlayer.Role, NetworkManager.ServerClientId);
+                    clientCount++;
+                    Debug.Log($"Client {clientId} connected. {clientCount}");
+                    if (clientCount == 2)
+                    {
+                        SpawnNPC();
+                    }
                 };
             }
             else
@@ -43,6 +50,14 @@ public class GameEngine : NetworkBehaviour
         }
         else
             Debug.LogError("NetworkManager is not in this scene.");
+    }
+
+    private void SpawnNPC()
+    {
+        Debug.Log($"mup SpawnNPC");
+        GameObject clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
+        clone.transform.position = new Vector3(2.0f, 3.0f, 0);
+        clone.GetComponent<NetworkObject>().Spawn(true);
     }
 
     private void SpawnPlayer(Role role, ulong clientId)
