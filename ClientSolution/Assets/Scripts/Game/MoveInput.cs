@@ -7,7 +7,7 @@ namespace Assets.Scripts.Game
 {
     public class MoveInput : MonoBehaviour
     {
-        public float moveSpeed = 15;
+        public float moveSpeed = 13; // default human
         private Vector2 _moveInput2;
         private Vector3 _moveInput3;
         private InputSystem_Actions _playerInput;
@@ -28,6 +28,9 @@ namespace Assets.Scripts.Game
             _moveInput3 = Vector3.zero;
             _playerInput = new InputSystem_Actions();
             _lastUpdate = DateTime.Now;
+
+            if (gameObject.CompareTag("Cat"))
+                moveSpeed = 20;
         }
 
         private void OnEnable()

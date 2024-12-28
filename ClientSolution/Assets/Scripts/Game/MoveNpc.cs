@@ -6,6 +6,8 @@ public class MoveNpc : NetworkBehaviour
 {
     public Transform target; // The target object (e.g., player)
     public float searchRadius = 10f; // How far to search for a spot
+    private float waitTime = MAX_WAIT_TIME;
+    private const float MAX_WAIT_TIME = 7f;
 
     private NavMeshAgent agent;
 
@@ -16,18 +18,18 @@ public class MoveNpc : NetworkBehaviour
 
         agent.updateRotation = false;
         agent.updateUpAxis = false;
-        //MoveToOutOfSightSpot();
     }
 
-    public override void OnNetworkSpawn()
+    private void Update()
     {
-        base.OnNetworkSpawn();
-
-        // cat npc is owned by server (which is hosted by human player)
-        if (!IsOwner)
+        if (waitTime < 0f)
         {
-            //enabled = false;
-            agent.enabled = false;
+            MoveToOutOfSightSpot();
+            waitTime += MAX_WAIT_TIME;
+        }
+        else
+        {
+            waitTime -= Time.deltaTime;
         }
     }
 
@@ -37,6 +39,7 @@ public class MoveNpc : NetworkBehaviour
 
         for (int i = 0; i < attempts; i++)
         {
+            Debug.Log($"MoveToOutOfSightSpot: {attempts}");
             Vector3 randomPoint = GetRandomPointOnNavMesh(transform.position, searchRadius);
 
             if (randomPoint != Vector3.zero && !IsVisibleToTarget(randomPoint))
@@ -53,11 +56,14 @@ public class MoveNpc : NetworkBehaviour
 
     Vector3 GetRandomPointOnNavMesh(Vector3 center, float radius)
     {
-        Vector3 randomDirection = Random.insideUnitSphere * radius;
-        randomDirection += center;
+        Vector2 randomDirection2 = Random.insideUnitCircle * radius;
+        Vector3 randomDirection = new Vector3(randomDirection2.x, randomDirection2.y, 0) + center;
         NavMeshHit hit;
 
-        if (NavMesh.SamplePosition(randomDirection, out hit, radius, NavMesh.AllAreas))
+        int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
+        int areaMask = ~(1 << notWalkableArea);
+
+        if (NavMesh.SamplePosition(randomDirection, out hit, radius, areaMask))
         {
             return hit.position;
         }
@@ -75,6 +81,7 @@ public class MoveNpc : NetworkBehaviour
         if (Physics.Raycast(ray, out hit, directionToPoint.magnitude))
         {
             // If the ray hits something, the point is NOT visible
+            Debug.Log($"Ray hit: {hit.collider.gameObject.name}");
             return false;
         }
 
