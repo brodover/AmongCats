@@ -44,7 +44,7 @@ public class SignalRConnectionManager
 
         _myRoom = new Room
         {
-            Id = "100",
+            Id = "-1",
             Players = players
         };
     }

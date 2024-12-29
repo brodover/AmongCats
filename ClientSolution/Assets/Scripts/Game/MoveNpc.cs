@@ -9,7 +9,7 @@ public class MoveNpc : NetworkBehaviour
     public float searchRadius = 10f; // How far to search for a spot
     private float waitTime = MAX_WAIT_TIME;
 
-    private const float MAX_WAIT_TIME = 5f;
+    private const float MAX_WAIT_TIME = 7f;
 
     private NavMeshAgent agent;
 
@@ -26,16 +26,17 @@ public class MoveNpc : NetworkBehaviour
     {
         int attempts = 10; // Limit attempts to prevent infinite loop
 
+        Debug.Log($"Current position: {transform.position} & target.position: {target.position}");
         for (int i = 0; i < attempts; i++)
         {
-            Debug.Log($"MoveToOutOfSightSpot: {i}");
             Vector3 randomPoint = GetRandomPointOnNavMesh(transform.position, searchRadius);
 
+            Debug.Log($"MoveToOutOfSightSpot #{i}: {randomPoint}");
             if (randomPoint != Vector3.zero && !IsVisibleToTarget(randomPoint))
             {
                 randomPoint.z = agent.transform.position.z;
                 agent.SetDestination(randomPoint);
-                Debug.Log("Moving to out-of-sight point: " + randomPoint);
+                Debug.Log("Success!!! Moving to: " + randomPoint);
                 return;
             }
         }
@@ -69,8 +70,8 @@ public class MoveNpc : NetworkBehaviour
         if (Physics.Raycast(ray, out hit, directionToPoint.magnitude))
         {
             // If the ray hits something, the point is NOT visible
-            Debug.Log($"Ray hit: {hit.collider.gameObject.name}");
-            return false;
+            Debug.Log($"mup Hit: {hit.collider.gameObject.name}");
+            return !hit.collider.gameObject.CompareTag("Wall");
         }
 
         // If the ray doesn't hit anything, the point is VISIBLE

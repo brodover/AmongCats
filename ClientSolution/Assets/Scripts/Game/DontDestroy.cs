@@ -50,7 +50,12 @@ public class DontDestroy : MonoBehaviour
         {
             if (NetworkManager.Singleton != null)
             {
-                if (SignalRConnectionManager.MyPlayer.Role == Role.Human && !NetworkManager.Singleton.IsListening)
+                if (SignalRConnectionManager.MyRoom == null || SignalRConnectionManager.MyPlayer == null)
+                {
+                    SignalRConnectionManager.InitializeConnectionTest();
+                    //throw new System.Exception("SignalRConnectionManager is null");
+                } 
+                else if (SignalRConnectionManager.MyPlayer.Role == Role.Human && !NetworkManager.Singleton.IsListening)
                 {
                     try
                     {
@@ -67,13 +72,13 @@ public class DontDestroy : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log("Invalid player role. Can't start match.");
+                    Debug.LogError("Invalid player role. Can't start match.");
                     return;
                 }
             }
             else
             {
-                Debug.Log("Missing NetworkManager. Can't start match.");
+                Debug.LogError("Missing NetworkManager. Can't start match.");
                 return;
             }
         }

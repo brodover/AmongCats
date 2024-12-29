@@ -20,15 +20,15 @@ public class GameEngine : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
-        if (SignalRConnectionManager.MyRoom == null || SignalRConnectionManager.MyPlayer == null)
+        if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
-            SignalRConnectionManager.InitializeConnectionTest();
-            //throw new System.Exception("SignalRConnectionManager is null");
+            SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
+            SpawnPlayer(Role.Cat, NetworkManager.ServerClientId);
+            SpawnNPC();
         }
 
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
-            Debug.Log($"OnNetworkSpawn: {NetworkManager.Singleton.IsListening}, {IsServer}, {IsClient}");
             if (IsServer)
             {
                 SpawnPlayer(SignalRConnectionManager.MyPlayer.Role, NetworkManager.ServerClientId);
@@ -84,7 +84,7 @@ public class GameEngine : NetworkBehaviour
     [ServerRpc(RequireOwnership = false)]
     public void RequestSpawnPlayerServerRpc(ulong clientId)
     {
-        Debug.Log($"Spawning player for client {clientId}, {IsServer}");
+        Debug.Log($"Request Server to spawn my player: {clientId}, {IsServer}");
         if (!IsServer) return;
 
         SpawnPlayer(Role.Cat, clientId);

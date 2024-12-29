@@ -8,6 +8,7 @@ TagManager:
   - LightMask
   - Human
   - Cat
+  - Wall
   layers:
   - Default
   - TransparentFX
