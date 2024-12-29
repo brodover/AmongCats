@@ -1,3 +1,4 @@
+using Assets.Scripts.Game;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -7,7 +8,8 @@ public class MoveNpc : NetworkBehaviour
     public Transform target; // The target object (e.g., player)
     public float searchRadius = 10f; // How far to search for a spot
     private float waitTime = MAX_WAIT_TIME;
-    private const float MAX_WAIT_TIME = 7f;
+
+    private const float MAX_WAIT_TIME = 5f;
 
     private NavMeshAgent agent;
 
@@ -20,26 +22,13 @@ public class MoveNpc : NetworkBehaviour
         agent.updateUpAxis = false;
     }
 
-    private void Update()
-    {
-        if (waitTime < 0f)
-        {
-            MoveToOutOfSightSpot();
-            waitTime += MAX_WAIT_TIME;
-        }
-        else
-        {
-            waitTime -= Time.deltaTime;
-        }
-    }
-
     void MoveToOutOfSightSpot()
     {
         int attempts = 10; // Limit attempts to prevent infinite loop
 
         for (int i = 0; i < attempts; i++)
         {
-            Debug.Log($"MoveToOutOfSightSpot: {attempts}");
+            Debug.Log($"MoveToOutOfSightSpot: {i}");
             Vector3 randomPoint = GetRandomPointOnNavMesh(transform.position, searchRadius);
 
             if (randomPoint != Vector3.zero && !IsVisibleToTarget(randomPoint))
@@ -56,8 +45,7 @@ public class MoveNpc : NetworkBehaviour
 
     Vector3 GetRandomPointOnNavMesh(Vector3 center, float radius)
     {
-        Vector2 randomDirection2 = Random.insideUnitCircle * radius;
-        Vector3 randomDirection = new Vector3(randomDirection2.x, randomDirection2.y, 0) + center;
+        Vector3 randomDirection = (Vector3)Random.insideUnitCircle * radius;
         NavMeshHit hit;
 
         int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
@@ -88,4 +76,24 @@ public class MoveNpc : NetworkBehaviour
         // If the ray doesn't hit anything, the point is VISIBLE
         return true;
     }
+    private void Update()
+    {
+        if (waitTime < 0f)
+        {
+            MoveToOutOfSightSpot();
+
+            waitTime += MAX_WAIT_TIME;
+        }
+        else
+        {
+            waitTime -= Time.deltaTime;
+        }
+
+        if (agent.velocity.x != 0)
+        {
+            float direction = Mathf.Sign(agent.velocity.x); // 1 for positive, -1 for negative
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * -direction, transform.localScale.y, transform.localScale.z);
+        }
+    }
+
 }

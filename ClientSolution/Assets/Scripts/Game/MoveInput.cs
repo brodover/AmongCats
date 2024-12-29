@@ -2,17 +2,22 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Windows;
+using static UnityEngine.RuleTile.TilingRuleOutput;
 
 namespace Assets.Scripts.Game
 {
     public class MoveInput : MonoBehaviour
     {
-        public float moveSpeed = 13; // default human
-        private Vector2 _moveInput2;
-        private Vector3 _moveInput3;
-        private InputSystem_Actions _playerInput;
-
         private Rigidbody rb;
+
+        [SerializeField] private float moveSpeed = 13; // default human
+
+        private float acceleration;
+
+        private Vector2 _currentVelocity = Vector2.zero;   // Tracks current velocity
+
+        private Vector2 _moveInput2;
+        private InputSystem_Actions _playerInput;
 
         private const int UPDATE_DELAY_MILISECOND = 250; // 50ms = 20hz
         private DateTime _lastUpdate;
@@ -22,13 +27,18 @@ namespace Assets.Scripts.Game
         {
             rb = GetComponent<Rigidbody>();
 
-            _moveInput2 = Vector2.zero;
-            _moveInput3 = Vector3.zero;
             _playerInput = new InputSystem_Actions();
-            _lastUpdate = DateTime.Now;
 
             if (gameObject.CompareTag("Cat"))
-                moveSpeed = 20;
+                moveSpeed = ClientCommon.Game.CatMovementSpeed;
+        }
+
+        private void Start()
+        {
+            _moveInput2 = Vector2.zero;
+            _lastUpdate = DateTime.Now;
+
+            acceleration = moveSpeed / ClientCommon.Game.TimeToMaxSpeed;
         }
 
         private void OnEnable()
@@ -45,20 +55,43 @@ namespace Assets.Scripts.Game
 
         private void Update()
         {
+            HandleMovement();
+        }
+
+        private void HandleMovement()
+        {
+            // Read player input
             _moveInput2 = _playerInput.Player.Move.ReadValue<Vector2>();
 
-            if (_moveInput2.x == 0 && _moveInput2.y == 0)
-                return;
+            // Target velocity based on input
+            Vector2 targetVelocity = _moveInput2.normalized * moveSpeed;
 
-            _moveInput3.x = _moveInput2.x;
-            _moveInput3.y = _moveInput2.y;
-            rb.MovePosition(rb.position + (_moveInput3.normalized * moveSpeed * Time.deltaTime));
-
-            /*if (DateTime.Now > _lastUpdate)
+            if (_moveInput2 != Vector2.zero)
             {
-                await SignalRConnectionManager.Instance.PlayerMove(rb.position.x, rb.position.y, rb.position.z, sr.flipX);
-                _lastUpdate = DateTime.Now.AddMilliseconds(UPDATE_DELAY_MILISECOND);
-            }*/
+                // Accelerate towards the target velocity
+                _currentVelocity = Vector2.MoveTowards(
+                    _currentVelocity,
+                    targetVelocity,
+                    acceleration * Time.deltaTime
+                );
+            }
+            else
+            {
+                // Decelerate when no input is detected
+                _currentVelocity = Vector2.MoveTowards(
+                    _currentVelocity,
+                    Vector2.zero,
+                    acceleration * Time.deltaTime
+                );
+            }
+            // Apply movement using Rigidbody
+            rb.MovePosition(rb.position + (Vector3)_currentVelocity * Time.deltaTime);
+
+            if (_moveInput2.x != 0)
+            {
+                float direction = Mathf.Sign(_moveInput2.x); // 1 for positive, -1 for negative
+                transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * -direction, transform.localScale.y, transform.localScale.z);
+            }
         }
     }
 }

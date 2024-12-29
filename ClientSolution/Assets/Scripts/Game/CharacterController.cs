@@ -5,9 +5,6 @@ using UnityEngine.AI;
 
 public class CharacterController : NetworkBehaviour
 {
-    private SpriteRenderer sr;
-    private Vector3 prevPos;
-
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -28,22 +25,10 @@ public class CharacterController : NetworkBehaviour
             {
                 gameObject.AddComponent<NavMeshAgent>();
                 var agent = gameObject.GetComponent<NavMeshAgent>();
-                agent.speed = 10; // 3.5
-                agent.acceleration = 18; //8
+                agent.speed = ClientCommon.Game.CatMovementSpeed; // 3.5
+                agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed; //8
                 gameObject.AddComponent<MoveNpc>();
             }
         }
-
-        sr = GetComponentInChildren<SpriteRenderer>();
-    }
-
-    private void Update()
-    {
-        if (!sr.flipX && transform.position.x > prevPos.x)
-            sr.flipX = true;
-        else if (sr.flipX && transform.position.x < prevPos.x)
-            sr.flipX = false;
-
-        prevPos = transform.position;
     }
 }
