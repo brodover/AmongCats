@@ -5,6 +5,9 @@ using UnityEngine.AI;
 
 public class CharacterController : NetworkBehaviour
 {
+    private SpriteRenderer sr;
+    private Vector3 prevPos;
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -30,7 +33,17 @@ public class CharacterController : NetworkBehaviour
                 gameObject.AddComponent<MoveNpc>();
             }
         }
-        
-        enabled = false;
+
+        sr = GetComponentInChildren<SpriteRenderer>();
+    }
+
+    private void Update()
+    {
+        if (!sr.flipX && transform.position.x > prevPos.x)
+            sr.flipX = true;
+        else if (sr.flipX && transform.position.x < prevPos.x)
+            sr.flipX = false;
+
+        prevPos = transform.position;
     }
 }

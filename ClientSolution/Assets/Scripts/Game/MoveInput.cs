@@ -13,7 +13,6 @@ namespace Assets.Scripts.Game
         private InputSystem_Actions _playerInput;
 
         private Rigidbody rb;
-        private SpriteRenderer sr;
 
         private const int UPDATE_DELAY_MILISECOND = 250; // 50ms = 20hz
         private DateTime _lastUpdate;
@@ -22,7 +21,6 @@ namespace Assets.Scripts.Game
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
-            sr = GetComponentInChildren<SpriteRenderer>();
 
             _moveInput2 = Vector2.zero;
             _moveInput3 = Vector3.zero;
@@ -55,11 +53,6 @@ namespace Assets.Scripts.Game
             _moveInput3.x = _moveInput2.x;
             _moveInput3.y = _moveInput2.y;
             rb.MovePosition(rb.position + (_moveInput3.normalized * moveSpeed * Time.deltaTime));
-
-            if (sr.flipX && _moveInput3.x < 0)
-                sr.flipX = false;
-            else if (!sr.flipX && _moveInput3.x > 0)
-                sr.flipX = true;
 
             /*if (DateTime.Now > _lastUpdate)
             {
