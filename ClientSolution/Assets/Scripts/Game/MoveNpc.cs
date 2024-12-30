@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Assets.Scripts.Game;
+using NUnit.Framework;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -7,9 +11,13 @@ public class MoveNpc : NetworkBehaviour
 {
     public Transform target; // The target object (e.g., player)
     public float searchRadius = 10f; // How far to search for a spot
+
     private float waitTime = MAX_WAIT_TIME;
+    private int toShuffleCountdown = 0;
 
     private const float MAX_WAIT_TIME = 7f;
+
+    private Vector3[] randomCentrePoints = new [] { new Vector3(10f, 27f, 0f), new Vector3(-10f, 27f, 0f), new Vector3(-10f, -27f, 0f), new Vector3(-10f, -27f, 0f), new Vector3(18.9f, 0.7f, 0f), new Vector3(13.4f, 1f, 0f) }; 
 
     private NavMeshAgent agent;
 
@@ -26,17 +34,22 @@ public class MoveNpc : NetworkBehaviour
     {
         int attempts = 10; // Limit attempts to prevent infinite loop
 
-        Debug.Log($"Current position: {transform.position} & target.position: {target.position}");
+        if (toShuffleCountdown == 0)
+        {
+            randomCentrePoints = randomCentrePoints.OrderBy(n => Guid.NewGuid()).ToArray();
+            toShuffleCountdown = randomCentrePoints.Length / 2;
+        }
+        toShuffleCountdown--;
+
+        Debug.Log($"toShuffleCountdown: {toShuffleCountdown}");
         for (int i = 0; i < attempts; i++)
         {
-            Vector3 randomPoint = GetRandomPointOnNavMesh(transform.position, searchRadius);
-
-            Debug.Log($"MoveToOutOfSightSpot #{i}: {randomPoint}");
+            Vector3 randomPoint = GetRandomPointOnNavMesh(randomCentrePoints[toShuffleCountdown], searchRadius);
             if (randomPoint != Vector3.zero && !IsVisibleToTarget(randomPoint))
             {
                 randomPoint.z = agent.transform.position.z;
                 agent.SetDestination(randomPoint);
-                Debug.Log("Success!!! Moving to: " + randomPoint);
+                Debug.Log($"Success at #{i}!!! Moving to {randomPoint}");
                 return;
             }
         }
@@ -46,7 +59,9 @@ public class MoveNpc : NetworkBehaviour
 
     Vector3 GetRandomPointOnNavMesh(Vector3 center, float radius)
     {
-        Vector3 randomDirection = (Vector3)Random.insideUnitCircle * radius;
+        Vector3 randomDirection = (Vector3)UnityEngine.Random.insideUnitCircle * radius;
+        randomDirection += center;
+
         NavMeshHit hit;
 
         int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");

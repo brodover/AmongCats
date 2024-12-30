@@ -25,6 +25,7 @@ public class GameEngine : NetworkBehaviour
             SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId);
             SpawnNPC();
+            return;
         }
 
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
