@@ -5,6 +5,8 @@ using UnityEngine.AI;
 
 public class CharacterController : NetworkBehaviour
 {
+    public bool toDisable = false;
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -17,8 +19,11 @@ public class CharacterController : NetworkBehaviour
                 gameObject.AddComponent<MoveInput>();
                 gameObject.AddComponent<lightcaster>();
 
-                var mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-                mainCamera.GetComponent<CameraFollow>().target = gameObject.transform;
+                if (!toDisable)
+                {
+                    var mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                    mainCamera.GetComponent<CameraFollow>().target = gameObject.transform;
+                }
             }
             // NPC
             else
@@ -29,6 +34,12 @@ public class CharacterController : NetworkBehaviour
                 agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed; //8
                 gameObject.AddComponent<MoveNpc>();
             }
+        }
+
+        if (toDisable)
+        {
+            gameObject.GetComponent<MoveInput>().enabled = false;
+            gameObject.GetComponent<lightcaster>().enabled = false;
         }
     }
 }

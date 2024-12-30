@@ -15,9 +15,9 @@ public class MoveNpc : NetworkBehaviour
     private float waitTime = MAX_WAIT_TIME;
     private int toShuffleCountdown = 0;
 
-    private const float MAX_WAIT_TIME = 7f;
+    private const float MAX_WAIT_TIME = 3f;
 
-    private Vector3[] randomCentrePoints = new [] { new Vector3(10f, 27f, 0f), new Vector3(-10f, 27f, 0f), new Vector3(-10f, -27f, 0f), new Vector3(-10f, -27f, 0f), new Vector3(18.9f, 0.7f, 0f), new Vector3(13.4f, 1f, 0f) }; 
+    private Vector3[] randomCentrePoints = new [] { new Vector3(27f, 10f, 0f), new Vector3(-27f, 10f, 0f), new Vector3(27f, -10f, 0f), new Vector3(-27f, -10f, 0f), new Vector3(-18.9f, 0.7f, 0f), new Vector3(13.4f, 1f, 0f) }; 
 
     private NavMeshAgent agent;
 
@@ -41,7 +41,7 @@ public class MoveNpc : NetworkBehaviour
         }
         toShuffleCountdown--;
 
-        Debug.Log($"toShuffleCountdown: {toShuffleCountdown}");
+        Debug.Log($"toShuffleCountdown: {toShuffleCountdown} : {randomCentrePoints[toShuffleCountdown]}");
         for (int i = 0; i < attempts; i++)
         {
             Vector3 randomPoint = GetRandomPointOnNavMesh(randomCentrePoints[toShuffleCountdown], searchRadius);
@@ -94,15 +94,18 @@ public class MoveNpc : NetworkBehaviour
     }
     private void Update()
     {
-        if (waitTime < 0f)
+        if (agent.velocity.x == 0)
         {
-            MoveToOutOfSightSpot();
+            if (waitTime < 0f)
+            {
+                MoveToOutOfSightSpot();
 
-            waitTime += MAX_WAIT_TIME;
-        }
-        else
-        {
-            waitTime -= Time.deltaTime;
+                waitTime += UnityEngine.Random.Range(0f, MAX_WAIT_TIME);
+            }
+            else
+            {
+                waitTime -= Time.deltaTime;
+            }
         }
 
         if (agent.velocity.x != 0)

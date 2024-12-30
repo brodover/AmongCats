@@ -23,7 +23,7 @@ public class GameEngine : NetworkBehaviour
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
             SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
-            SpawnPlayer(Role.Cat, NetworkManager.ServerClientId);
+            SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
             SpawnNPC();
             return;
         }
@@ -57,11 +57,11 @@ public class GameEngine : NetworkBehaviour
     {
         Debug.Log($"mup SpawnNPC");
         GameObject clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
-        clone.transform.position = new Vector3(2.0f, 3.0f, 0);
+        clone.transform.position = new Vector3(5.0f, 3.0f, 0);
         clone.GetComponent<NetworkObject>().Spawn(true);
     }
 
-    private void SpawnPlayer(Role role, ulong clientId)
+    private void SpawnPlayer(Role role, ulong clientId, bool disable = false)
     {
         Debug.Log($"mup SpawnPlayer: {role}, {clientId}");
         GameObject clone;
@@ -74,11 +74,13 @@ public class GameEngine : NetworkBehaviour
         else if (role == Common.Role.Cat)
         {
             clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
-            clone.transform.position = new Vector3(2.0f, 0, 0);
+            clone.transform.position = new Vector3(5.0f, 0, 0);
         }
         else {
             return;
         }
+
+        clone.GetComponent<CharacterController>().toDisable = disable;
         clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
     }
 
