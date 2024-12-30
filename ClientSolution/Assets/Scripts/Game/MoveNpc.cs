@@ -24,7 +24,7 @@ public class MoveNpc : NetworkBehaviour
     void Awake()
     {
         target = GameObject.FindGameObjectWithTag("Human").transform;
-        agent = GetComponent<NavMeshAgent>();
+    private GameObject testMoveToMarker;
 
         agent.updateRotation = false;
         agent.updateUpAxis = false;
@@ -37,8 +37,8 @@ public class MoveNpc : NetworkBehaviour
         if (toShuffleCountdown == 0)
         {
             randomCentrePoints = randomCentrePoints.OrderBy(n => Guid.NewGuid()).ToArray();
-            toShuffleCountdown = randomCentrePoints.Length / 2;
-        }
+        // TEST
+        testMoveToMarker = GameObject.Find("Marker");
         toShuffleCountdown--;
 
         Debug.Log($"toShuffleCountdown: {toShuffleCountdown} : {randomCentrePoints[toShuffleCountdown]}");
@@ -61,7 +61,7 @@ public class MoveNpc : NetworkBehaviour
     {
         Vector3 randomDirection = (Vector3)UnityEngine.Random.insideUnitCircle * radius;
         randomDirection += center;
-
+                testMoveToMarker.transform.position = randomPoint; // TEST
         NavMeshHit hit;
 
         int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
