@@ -9,6 +9,7 @@ TagManager:
   - Human
   - Cat
   - Wall
+  - Debug
   layers:
   - Default
   - TransparentFX

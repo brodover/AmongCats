@@ -25,6 +25,7 @@ public class MoveNpc : NetworkBehaviour
     private Rigidbody rb;
 
     private GameObject testMoveToMarker;
+    private GameObject testSteerToMarker;
 
     void Awake()
     {
@@ -37,8 +38,20 @@ public class MoveNpc : NetworkBehaviour
         agent.updateRotation = false;
         agent.updateUpAxis = false;
 
+        agent.autoBraking = false;
+        agent.stoppingDistance = 0.1f;
+        agent.radius = 3f;
+        agent.angularSpeed = 10f;
+
+        int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
+        agent.areaMask = ~(1 << notWalkableArea);
+
+        agent.speed = ClientCommon.Game.CatMovementSpeed; // 3.5
+        agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed; //8
+
         // TEST
         testMoveToMarker = GameObject.Find("Marker");
+        testSteerToMarker = GameObject.Find("SteeringMarker");
     }
 
     void MoveToOutOfSightSpot()
@@ -60,7 +73,8 @@ public class MoveNpc : NetworkBehaviour
             {
                 randomPoint.z = agent.transform.position.z;
                 agent.SetDestination(randomPoint);
-                testMoveToMarker.transform.position = randomPoint; // TEST
+                if (testMoveToMarker)
+                    testMoveToMarker.transform.position = randomPoint; // TEST
                 Debug.Log($"mup Success at #{i}!!! Moving to {randomPoint}");
                 return;
             }
@@ -75,11 +89,7 @@ public class MoveNpc : NetworkBehaviour
         randomDirection += center;
 
         NavMeshHit hit;
-
-        int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
-        int areaMask = ~(1 << notWalkableArea);
-
-        if (NavMesh.SamplePosition(randomDirection, out hit, radius, areaMask))
+        if (NavMesh.SamplePosition(randomDirection, out hit, radius, agent.areaMask))
         {
             return hit.position;
         }
@@ -187,6 +197,9 @@ public class MoveNpc : NetworkBehaviour
 
     private void Update()
     {
+        if (testSteerToMarker)
+            testSteerToMarker.transform.position = agent.steeringTarget; // TEST
+
         if (agent.velocity.x == 0)
         {
             if (waitTime < 0f)

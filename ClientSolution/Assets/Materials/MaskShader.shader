@@ -44,8 +44,8 @@ Shader "Unlit/ScreenspaceTexture"
                 // Transform to clip space
                 o.vertex = UnityObjectToClipPos(v.vertex);
 
-                // Compute screen-space position (xy for UV mapping, w for depth)
-                o.screenPos = o.vertex.xyw;
+                // Compute screen-space position (xy for UV mapping without depth)
+                o.screenPos.xy = o.vertex.xy;
 
                 // Adjust for OpenGL platforms (inverted Y axis in screen space)
                 #ifdef UNITY_UV_STARTS_AT_TOP
@@ -59,7 +59,7 @@ Shader "Unlit/ScreenspaceTexture"
             fixed4 frag (v2f i) : SV_Target
             {
                 // Calculate screen-space UV coordinates
-                float2 screenUV = (i.screenPos.xy / i.screenPos.z) * 0.5f + 0.5f;
+                float2 screenUV = i.screenPos.xy * 0.5f + 0.5f;
 
                 // Sample the texture
                 fixed4 col = tex2D(_MainTex, screenUV);

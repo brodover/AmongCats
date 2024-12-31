@@ -29,9 +29,6 @@ public class CharacterController : NetworkBehaviour
             else
             {
                 gameObject.AddComponent<NavMeshAgent>();
-                var agent = gameObject.GetComponent<NavMeshAgent>();
-                agent.speed = ClientCommon.Game.CatMovementSpeed; // 3.5
-                agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed; //8
                 gameObject.AddComponent<MoveNpc>();
             }
         }
