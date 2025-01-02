@@ -113,16 +113,6 @@ public class SignalRConnectionManager
                 OnMatchClosed?.Invoke();
             });
 
-            _connection.On<List<Player>>(HubMsg.ToClient.PlayerMoveUpdated, players =>
-            {
-                if (_myRoom == null)
-                    return;
-                Debug.Log($"PlayerMoveUpdated");
-
-                _myRoom.Players = players;
-                OnPlayerMoveUpdated?.Invoke();
-            });
-
             await StartConnection();
         }
         catch (Exception ex)
@@ -178,18 +168,5 @@ public class SignalRConnectionManager
             return;
 
         await _connection.InvokeAsync(HubMsg.ToServer.LeaveQueue);
-    }
-
-    public async Task PlayerMove(float posX, float posY, float posZ, bool isFaceRight)
-    {
-        if (_connection == null)
-            return;
-
-        Debug.Log("Send PlayerMove");
-
-        _myPlayer.Position = new System.Numerics.Vector3(posX, posY, posZ);
-        _myPlayer.IsFaceRight = isFaceRight;
-
-        await _connection.InvokeAsync(HubMsg.ToServer.MovePlayer, _myPlayer);
     }
 }

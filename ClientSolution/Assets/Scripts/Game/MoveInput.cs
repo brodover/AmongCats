@@ -1,14 +1,12 @@
 using System;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.Windows;
-using static UnityEngine.RuleTile.TilingRuleOutput;
 
 namespace Assets.Scripts.Game
 {
     public class MoveInput : MonoBehaviour
     {
         private Rigidbody rb;
+        private Transform spriteTransform;
 
         [SerializeField] private float moveSpeed = 13; // default human
 
@@ -26,6 +24,7 @@ namespace Assets.Scripts.Game
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
+            spriteTransform = transform.GetChild(0).transform;
 
             _playerInput = new InputSystem_Actions();
 
@@ -90,7 +89,7 @@ namespace Assets.Scripts.Game
             if (_moveInput2.x != 0)
             {
                 float direction = Mathf.Sign(_moveInput2.x); // 1 for positive, -1 for negative
-                transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * -direction, transform.localScale.y, transform.localScale.z);
+                spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -direction, spriteTransform.localScale.y, spriteTransform.localScale.z);
             }
         }
     }

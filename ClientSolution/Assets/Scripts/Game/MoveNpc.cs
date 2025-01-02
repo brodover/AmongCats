@@ -23,6 +23,7 @@ public class MoveNpc : NetworkBehaviour
 
     private NavMeshAgent agent;
     private Rigidbody rb;
+    private Transform spriteTransform;
 
     private GameObject testMoveToMarker;
     private GameObject testSteerToMarker;
@@ -33,6 +34,7 @@ public class MoveNpc : NetworkBehaviour
 
         agent = GetComponent<NavMeshAgent>();
         rb = GetComponent<Rigidbody>();
+        spriteTransform = transform.GetChild(0).transform;
 
         //agent.updatePosition = false; // handle movement manually for 8-dir
         agent.updateRotation = false;
@@ -65,7 +67,6 @@ public class MoveNpc : NetworkBehaviour
         }
         toShuffleCountdown--;
 
-        Debug.Log($"mup toShuffleCountdown: {toShuffleCountdown} : {randomCentrePoints[toShuffleCountdown]}");
         for (int i = 0; i < attempts; i++)
         {
             Vector3 randomPoint = GetRandomPointOnNavMesh(randomCentrePoints[toShuffleCountdown], searchRadius);
@@ -107,7 +108,6 @@ public class MoveNpc : NetworkBehaviour
         if (Physics.Raycast(ray, out hit, directionToPoint.magnitude))
         {
             // If the ray hits something, the point is NOT visible
-            Debug.Log($"mup Hit: {hit.collider.gameObject.name}");
             return !hit.collider.gameObject.CompareTag("Wall");
         }
 
@@ -217,7 +217,7 @@ public class MoveNpc : NetworkBehaviour
         if (agent.velocity.x != 0)
         {
             float direction = Mathf.Sign(agent.velocity.x); // 1 for positive, -1 for negative
-            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x) * -direction, transform.localScale.y, transform.localScale.z);
+            spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -direction, spriteTransform.localScale.y, spriteTransform.localScale.z);
         }
     }
 
