@@ -24,11 +24,9 @@ public class MoveNpc : NetworkBehaviour
 
     private int _currentCornerIndex = 0;
     private NavMeshPath _path;
-    private Vector3[] _corners = new Vector3[] { };
     private Vector3[] _randomCentrePoints = new [] { new Vector3(27f, 10f, 0f), new Vector3(-27f, 10f, 0f), new Vector3(27f, -10f, 0f), new Vector3(-27f, -10f, 0f), new Vector3(-18.9f, 0.7f, 0f), new Vector3(13.4f, 1f, 0f) }; 
 
     private NavMeshAgent agent;
-    private Rigidbody rb;
     private Transform spriteTransform;
 
     private GameObject _testMoveToMarker;
@@ -39,12 +37,11 @@ public class MoveNpc : NetworkBehaviour
         target = GameObject.FindGameObjectWithTag("Human").transform;
 
         agent = GetComponent<NavMeshAgent>();
-        rb = GetComponent<Rigidbody>();
         spriteTransform = transform.GetChild(0).transform;
 
-        agent.updatePosition = false; // handle movement manually for 8-dir
         agent.updateRotation = false;
         agent.updateUpAxis = false;
+        agent.isStopped = true;
 
         agent.autoBraking = false;
         agent.stoppingDistance = 0.1f;
@@ -55,6 +52,8 @@ public class MoveNpc : NetworkBehaviour
 
         agent.speed = ClientCommon.Game.CatMovementSpeed;
         agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed;
+
+        _path = new NavMeshPath();
 
         // TEST
         _testMoveToMarker = GameObject.Find("Marker");
@@ -78,52 +77,20 @@ public class MoveNpc : NetworkBehaviour
             if (randomPoint != Vector3.zero && !IsVisibleToTarget(randomPoint))
             {
                 randomPoint.z = transform.position.z;
-                _path = new NavMeshPath();
-                if (agent.SetDestination(randomPoint))
-                {
-                    agent.CalculatePath(randomPoint, _path);
-                    _currentCornerIndex = 0;
-                    agent.isStopped = false;
-                    Debug.Log($"_path.corners { _path.corners.Length}, { _path.status}: {string.Join(",", _path.corners)}");
+                agent.CalculatePath(randomPoint, _path);
+                _currentCornerIndex = 0;
+                agent.isStopped = false;
+                Debug.Log($"_path.corners { _path.corners.Length}, { _path.status}: {string.Join(",", _path.corners)}");
 
-                    if (_testMoveToMarker)
-                        _testMoveToMarker.transform.position = randomPoint; // TEST
-                    Debug.Log($"mup Success at #{i}!!! Moving to {randomPoint}");
-
-                }
-
-                //StartCoroutine(WaitAWhile(randomPoint, i));
+                if (_testMoveToMarker)
+                    _testMoveToMarker.transform.position = randomPoint; // TEST
+                Debug.Log($"mup Success at #{i}!!! Moving to {randomPoint}");
 
                 return;
             }
         }
 
         Debug.LogWarning("Failed to find an out-of-sight point after multiple attempts.");
-    }
-
-    IEnumerator WaitAWhile(Vector3 randomPoint, int i)
-    {
-        agent.SetDestination(randomPoint); // calculate path
-
-        yield return new WaitForSeconds(0.1f);
-        while (agent.pathPending)
-        {
-            yield return null;
-        }
-
-        Debug.Log($"agent.path.corners {agent.path.corners.Length}, {agent.path.status}: {string.Join(",", agent.path.corners)}");
-        _corners = new Vector3[agent.path.corners.Length + 1];
-        agent.path.corners.CopyTo(_corners, 0);
-        _corners[agent.path.corners.Length] = randomPoint;
-        Debug.Log($"_corners: {string.Join(",", _corners)}");
-
-        agent.SetDestination(transform.position); // reset and use move instead
-        _currentCornerIndex = 0;
-        agent.isStopped = false;
-
-        if (_testMoveToMarker)
-            _testMoveToMarker.transform.position = randomPoint; // TEST
-        Debug.Log($"mup Success at #{i}!!! Moving to {randomPoint}");
     }
 
     Vector3 GetRandomPointOnNavMesh(Vector3 center, float radius)
@@ -182,12 +149,6 @@ public class MoveNpc : NetworkBehaviour
         return constrainedDirection;
     }
 
-    /*void OnAnimatorMove()
-    {
-        // Sync NavMeshAgent's position with Rigidbody
-        agent.nextPosition = transform.position;
-    }*/
-
     public float radius = 2.0f;
     public int samplePoints = 8; // More points for higher accuracy
 
@@ -222,10 +183,10 @@ public class MoveNpc : NetworkBehaviour
         return true; // All points valid and no obstructions detected
     }
 
-    private void Update()
+    /*private void Update()
     {
         // wait/move
-        if (agent.velocity.x == 0)
+        if (agent.isStopped)
         {
             if (_waitTime < 0f)
             {
@@ -262,8 +223,11 @@ public class MoveNpc : NetworkBehaviour
                     Debug.Log($"Initial dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
 
                     // facing direction
-                    float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
-                    spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -facingDir, spriteTransform.localScale.y, transform.localScale.z);
+                    if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
+                    {
+                        float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
+                        spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -facingDir, spriteTransform.localScale.y, transform.localScale.z);
+                    }
                 }
                 else
                 {
@@ -272,8 +236,7 @@ public class MoveNpc : NetworkBehaviour
                     _constrainedDirection = Vector3.zero;
                     agent.Move(_constrainedDirection);
                     agent.isStopped = true;
-                    _corners = new Vector3[] { };
-                    _path = null;
+                    _path.ClearCorners();
                     _currentTarget = Vector3.zero;
                 }
             }
@@ -297,48 +260,179 @@ public class MoveNpc : NetworkBehaviour
                 Debug.Log($"Fixed dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
 
                 // facing direction
-                float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
-                spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -facingDir, spriteTransform.localScale.y, transform.localScale.z);
+                if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
+                {
+                    float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
+                    spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -facingDir, spriteTransform.localScale.y, transform.localScale.z);
+                }
             }
 
             if (_constrainedDirection != Vector3.zero)
             {
                 // Step 3: Apply Movement
                 Vector3 movement = _constrainedDirection * agent.speed * Time.deltaTime;
-                rb.MovePosition(rb.position + movement);
-                //Debug.Log($"Move: {_constrainedDirection} /// {movement}");
-                //agent.Move(movement);
-                agent.nextPosition = transform.position;
+                agent.Move(movement);
             }
-        }
-
-        
-    }
-
-    /*private void Update()
-    {
-        if (_testSteerToMarker)
-            _testSteerToMarker.transform.position = agent.steeringTarget; // TEST
-
-        if (agent.velocity.x == 0)
-        {
-            if (_waitTime < 0f)
-            {
-                MoveToOutOfSightSpot();
-
-                _waitTime += UnityEngine.Random.Range(0f, MAX_WAIT_TIME);
-            }
-            else
-            {
-                _waitTime -= Time.deltaTime;
-            }
-        }
-
-        if (agent.velocity.x != 0)
-        {
-            float direction = Mathf.Sign(agent.velocity.x); // 1 for positive, -1 for negative
-            spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -direction, spriteTransform.localScale.y, spriteTransform.localScale.z);
         }
     }*/
 
+    private void Update()
+    {
+        // Handle Waiting State
+        if (agent.isStopped)
+        {
+            HandleWaiting();
+            return;
+        }
+
+        // Handle Movement Along Path
+        if (_path == null || _path.corners.Length == 0)
+            return;
+
+        // Check if the agent reached the current target
+        if (HasReachedCurrentTarget())
+        {
+            MoveToNextCorner();
+        }
+
+        // Adjust direction if needed
+        AdjustDirectionIfAligned();
+
+        // Apply Movement
+        ApplyMovement();
+    }
+
+    /// <summary>
+    /// Handles waiting logic when the agent is stopped.
+    /// </summary>
+    private void HandleWaiting()
+    {
+        if (_waitTime < 0f)
+        {
+            MoveToOutOfSightSpot();
+            _waitTime += UnityEngine.Random.Range(3f, MAX_WAIT_TIME);
+        }
+        else
+        {
+            _waitTime -= Time.deltaTime;
+        }
+    }
+
+    /// <summary>
+    /// Checks if the agent has reached the current target corner.
+    /// </summary>
+    private bool HasReachedCurrentTarget()
+    {
+        return _currentCornerIndex == 0 ||
+               (Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance &&
+                Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance);
+    }
+
+    /// <summary>
+    /// Moves to the next corner in the path.
+    /// </summary>
+    private void MoveToNextCorner()
+    {
+        _currentCornerIndex++;
+        if (_currentCornerIndex < _path.corners.Length)
+        {
+            _currentTarget = _path.corners[_currentCornerIndex];
+
+            if (_testSteerToMarker)
+                _testSteerToMarker.transform.position = _currentTarget; // TEST
+
+            UpdateDirection();
+        }
+        else
+        {
+            StopAgent();
+        }
+    }
+
+    /// <summary>
+    /// Updates movement direction and sprite facing direction.
+    /// </summary>
+    private void UpdateDirection()
+    {
+        Vector3 direction = (_currentTarget - transform.position).normalized;
+        _constrainedDirection = ConstrainDirection(new Vector3(direction.x, direction.y, 0f));
+        Debug.Log($"Next dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
+
+        UpdateSpriteFacingDirection();
+    }
+
+    /// <summary>
+    /// Adjusts direction if the agent aligns along a single axis.
+    /// </summary>
+    private void AdjustDirectionIfAligned()
+    {
+        if (IsAlignedWithTarget())
+        {
+            Vector3 direction = (_currentTarget - transform.position).normalized;
+            _constrainedDirection = ConstrainDirection(new Vector3(direction.x, direction.y, 0f));
+            Debug.Log($"Adjusted dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
+            UpdateSpriteFacingDirection();
+        }
+    }
+
+    /// <summary>
+    /// Checks if the agent is aligned along a single axis.
+    /// </summary>
+    private bool IsAlignedWithTarget()
+    {
+        return
+            // was diagonal but in line on one axis now
+            (Mathf.Abs(_constrainedDirection.x) > agent.stoppingDistance &&
+             Mathf.Abs(_constrainedDirection.y) > agent.stoppingDistance &&
+             (Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance ||
+              Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance))
+            ||
+            // was going horizontal but in line on x axis now
+            (Mathf.Abs(_constrainedDirection.x) > agent.stoppingDistance &&
+             Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance)
+            ||
+            // was going vertical but in line on y axis now
+            (Mathf.Abs(_constrainedDirection.y) > agent.stoppingDistance &&
+             Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance);
+    }
+
+    /// <summary>
+    /// Updates sprite facing direction based on movement direction.
+    /// </summary>
+    private void UpdateSpriteFacingDirection()
+    {
+        if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
+        {
+            float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
+            spriteTransform.localScale = new Vector3(
+                Mathf.Abs(spriteTransform.localScale.x) * -facingDir,
+                spriteTransform.localScale.y,
+                transform.localScale.z
+            );
+        }
+    }
+
+    /// <summary>
+    /// Applies movement using the constrained direction.
+    /// </summary>
+    private void ApplyMovement()
+    {
+        if (_constrainedDirection != Vector3.zero)
+        {
+            Vector3 movement = _constrainedDirection * agent.speed * Time.deltaTime;
+            agent.Move(movement);
+        }
+    }
+
+    /// <summary>
+    /// Stops the agent, clears the path, and resets state.
+    /// </summary>
+    private void StopAgent()
+    {
+        Debug.Log("Stopped");
+        _constrainedDirection = Vector3.zero;
+        agent.isStopped = true;
+        _path.ClearCorners();
+        _currentTarget = Vector3.zero;
+    }
 }
