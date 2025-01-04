@@ -17,7 +17,6 @@ public class SignalRConnectionManager
 
     public event Action OnMatchCreated;
     public event Action OnMatchClosed;
-    public event Action OnPlayerMoveUpdated;
 
     private static Player _myPlayer = null;
 

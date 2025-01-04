@@ -13,11 +13,12 @@ public class CharacterController : NetworkBehaviour
 
         if (IsOwner)
         {
-            // Player
+            // My Player
             if (GetComponent<NetworkObject>().IsPlayerObject)
             {
                 gameObject.AddComponent<MoveInput>();
                 gameObject.AddComponent<lightcaster>();
+                transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = 3; // 1 higher than other characters
 
                 if (!toDisable)
                 {
