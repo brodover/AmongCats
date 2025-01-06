@@ -187,99 +187,6 @@ public class MoveNpc : NetworkBehaviour
         return true; // All points valid and no obstructions detected
     }
 
-    /*private void Update()
-    {
-        // wait/move
-        if (agent.isStopped)
-        {
-            if (_waitTime < 0f)
-            {
-                MoveToOutOfSightSpot();
-
-                _waitTime += UnityEngine.Random.Range(3f, MAX_WAIT_TIME);
-            }
-            else
-            {
-                _waitTime -= Time.deltaTime;
-            }
-        }
-
-        //if (agent.pathPending || agent.remainingDistance <= agent.stoppingDistance)
-        //    return;
-
-        // Step 1: Get Next Target Position
-        if (!agent.isStopped && _path != null)
-        {
-            if (_currentCornerIndex == 0 || Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance && Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance)
-            {
-                _currentCornerIndex++;
-                if (_currentCornerIndex < _path.corners.Length)
-                {
-                    _currentTarget = _path.corners[_currentCornerIndex];
-
-                    if (_testSteerToMarker)
-                        _testSteerToMarker.transform.position = _currentTarget; // TEST
-
-                    // Step 2: Calculate Movement Direction
-                    Vector3 direction = (_currentTarget - transform.position).normalized;
-
-                    _constrainedDirection = ConstrainDirection(new Vector3(direction.x, direction.y, 0f));
-                    Debug.Log($"Initial dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
-
-                    // facing direction
-                    if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
-                    {
-                        float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
-                        spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -facingDir, spriteTransform.localScale.y, transform.localScale.z);
-                    }
-                }
-                else
-                {
-                    // stop
-                    Debug.Log("Stopped");
-                    _constrainedDirection = Vector3.zero;
-                    agent.Move(_constrainedDirection);
-                    agent.isStopped = true;
-                    _path.ClearCorners();
-                    _currentTarget = Vector3.zero;
-                }
-            }
-            else if (
-                // was diagonal but in line on one axis now
-                ((Math.Abs(_constrainedDirection.x) > agent.stoppingDistance && Math.Abs(_constrainedDirection.y) > agent.stoppingDistance) 
-                && (Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance || Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance))
-                ||
-                // was going horizontal but in line on x axis now
-                (Math.Abs(_constrainedDirection.x) > agent.stoppingDistance
-                && Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance)
-                ||
-                // was going vertical but in line on y axis now
-                (Math.Abs(_constrainedDirection.y) > agent.stoppingDistance
-                && Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance)
-                )
-            {
-                Vector3 direction = (_currentTarget - transform.position).normalized;
-
-                _constrainedDirection = ConstrainDirection(new Vector3(direction.x, direction.y, 0f));
-                Debug.Log($"Fixed dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
-
-                // facing direction
-                if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
-                {
-                    float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
-                    spriteTransform.localScale = new Vector3(Mathf.Abs(spriteTransform.localScale.x) * -facingDir, spriteTransform.localScale.y, transform.localScale.z);
-                }
-            }
-
-            if (_constrainedDirection != Vector3.zero)
-            {
-                // Step 3: Apply Movement
-                Vector3 movement = _constrainedDirection * agent.speed * Time.deltaTime;
-                agent.Move(movement);
-            }
-        }
-    }*/
-
     private void Update()
     {
         // Handle Waiting State
@@ -388,16 +295,16 @@ public class MoveNpc : NetworkBehaviour
             // was diagonal but in line on one axis now
             (Mathf.Abs(_constrainedDirection.x) > MIN_MOVE_DISTANCE &&
              Mathf.Abs(_constrainedDirection.y) > MIN_MOVE_DISTANCE &&
-             (Mathf.Abs(_currentTarget.x - transform.position.x) <= MIN_MOVE_DISTANCE ||
-              Mathf.Abs(_currentTarget.y - transform.position.y) <= MIN_MOVE_DISTANCE))
+             (Mathf.Abs(_currentTarget.x - transform.position.x) <= STOPPING_DISTANCE ||
+              Mathf.Abs(_currentTarget.y - transform.position.y) <= STOPPING_DISTANCE))
             ||
             // was going horizontal but in line on x axis now
             (Mathf.Abs(_constrainedDirection.x) > MIN_MOVE_DISTANCE &&
-             Mathf.Abs(_currentTarget.x - transform.position.x) <= MIN_MOVE_DISTANCE)
+             Mathf.Abs(_currentTarget.x - transform.position.x) <= STOPPING_DISTANCE)
             ||
             // was going vertical but in line on y axis now
             (Mathf.Abs(_constrainedDirection.y) > MIN_MOVE_DISTANCE &&
-             Mathf.Abs(_currentTarget.y - transform.position.y) <= MIN_MOVE_DISTANCE);
+             Mathf.Abs(_currentTarget.y - transform.position.y) <= STOPPING_DISTANCE);
     }
 
     /// <summary>
