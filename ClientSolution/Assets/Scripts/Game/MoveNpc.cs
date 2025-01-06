@@ -21,6 +21,8 @@ public class MoveNpc : NetworkBehaviour
     private int _toShuffleCountdown = 0;
 
     private const float MAX_WAIT_TIME = 5f;
+    private const float STOPPING_DISTANCE = 0.1f;
+    private const float MIN_MOVE_DISTANCE = 0.02f;
 
     private int _currentCornerIndex = 0;
     private NavMeshPath _path;
@@ -31,6 +33,7 @@ public class MoveNpc : NetworkBehaviour
 
     private GameObject _testMoveToMarker;
     private GameObject _testSteerToMarker;
+
 
     void Awake()
     {
@@ -44,7 +47,7 @@ public class MoveNpc : NetworkBehaviour
         agent.isStopped = true;
 
         agent.autoBraking = false;
-        agent.stoppingDistance = 0.1f;
+        agent.stoppingDistance = STOPPING_DISTANCE;
         agent.angularSpeed = 10f;
 
         int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
@@ -126,21 +129,22 @@ public class MoveNpc : NetworkBehaviour
 
     Vector2 ConstrainDirection(Vector2 inputDirection)
     {
-        Vector2 constrainedDirection;
+        var constrainedDirection = new Vector2(Mathf.Abs(inputDirection.x), Mathf.Abs(inputDirection.y));
 
-        // Prioritize Horizontal or Vertical Movement
-        if (Mathf.Abs(inputDirection.x) > Mathf.Abs(4f * inputDirection.y))
+        // Prioritize diagonal movement first
+        if (constrainedDirection.x > MIN_MOVE_DISTANCE && constrainedDirection.y > MIN_MOVE_DISTANCE)
+        {
+            constrainedDirection = new Vector2(Mathf.Sign(inputDirection.x), Mathf.Sign(inputDirection.y));
+        }
+        // Then shorter distance next
+        else if (constrainedDirection.x < constrainedDirection.y && constrainedDirection.x > MIN_MOVE_DISTANCE
+            || constrainedDirection.x > constrainedDirection.y)
         {
             constrainedDirection = new Vector2(Mathf.Sign(inputDirection.x), 0); // Left or Right
         }
-        else if (Mathf.Abs(inputDirection.y) > Mathf.Abs(4f * inputDirection.x))
-        {
-            constrainedDirection = new Vector2(0, Mathf.Sign(inputDirection.y)); // Up or Down
-        }
         else
         {
-            // Diagonal movement
-            constrainedDirection = new Vector2(Mathf.Sign(inputDirection.x), Mathf.Sign(inputDirection.y));
+            constrainedDirection = new Vector2(0, Mathf.Sign(inputDirection.y)); // Up or Down
         }
 
         // Renormalize to match original direction's magnitude
@@ -382,18 +386,18 @@ public class MoveNpc : NetworkBehaviour
     {
         return
             // was diagonal but in line on one axis now
-            (Mathf.Abs(_constrainedDirection.x) > agent.stoppingDistance &&
-             Mathf.Abs(_constrainedDirection.y) > agent.stoppingDistance &&
-             (Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance ||
-              Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance))
+            (Mathf.Abs(_constrainedDirection.x) > MIN_MOVE_DISTANCE &&
+             Mathf.Abs(_constrainedDirection.y) > MIN_MOVE_DISTANCE &&
+             (Mathf.Abs(_currentTarget.x - transform.position.x) <= MIN_MOVE_DISTANCE ||
+              Mathf.Abs(_currentTarget.y - transform.position.y) <= MIN_MOVE_DISTANCE))
             ||
             // was going horizontal but in line on x axis now
-            (Mathf.Abs(_constrainedDirection.x) > agent.stoppingDistance &&
-             Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance)
+            (Mathf.Abs(_constrainedDirection.x) > MIN_MOVE_DISTANCE &&
+             Mathf.Abs(_currentTarget.x - transform.position.x) <= MIN_MOVE_DISTANCE)
             ||
             // was going vertical but in line on y axis now
-            (Mathf.Abs(_constrainedDirection.y) > agent.stoppingDistance &&
-             Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance);
+            (Mathf.Abs(_constrainedDirection.y) > MIN_MOVE_DISTANCE &&
+             Mathf.Abs(_currentTarget.y - transform.position.y) <= MIN_MOVE_DISTANCE);
     }
 
     /// <summary>
