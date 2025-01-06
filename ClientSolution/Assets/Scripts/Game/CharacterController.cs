@@ -5,7 +5,8 @@ using UnityEngine.AI;
 
 public class CharacterController : NetworkBehaviour
 {
-    public bool toDisable = false;
+    public bool toPlayerControl = true;
+    public bool toSpectate = false;
 
     public override void OnNetworkSpawn()
     {
@@ -16,15 +17,11 @@ public class CharacterController : NetworkBehaviour
             // My Player
             if (GetComponent<NetworkObject>().IsPlayerObject)
             {
-                gameObject.AddComponent<MoveInput>();
-                gameObject.AddComponent<lightcaster>();
-                transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = 3; // 1 higher than other characters
-
-                if (!toDisable)
+                if (toPlayerControl)
                 {
-                    var mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-                    mainCamera.GetComponent<CameraFollow>().target = gameObject.transform;
+                    gameObject.AddComponent<MoveInput>();
                 }
+                transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = 3; // 1 higher than other characters
             }
             // NPC
             else
@@ -32,12 +29,13 @@ public class CharacterController : NetworkBehaviour
                 gameObject.AddComponent<NavMeshAgent>();
                 gameObject.AddComponent<MoveNpc>();
             }
-        }
 
-        if (toDisable)
-        {
-            gameObject.GetComponent<MoveInput>().enabled = false;
-            gameObject.GetComponent<lightcaster>().enabled = false;
+            if (toSpectate)
+            {
+                var mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                gameObject.AddComponent<lightcaster>();
+                mainCamera.GetComponent<CameraFollow>().target = gameObject.transform;
+            }
         }
     }
 }

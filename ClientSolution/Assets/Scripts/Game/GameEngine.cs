@@ -1,6 +1,7 @@
 using System;
 using SharedLibrary;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static SharedLibrary.Common;
@@ -16,9 +17,9 @@ public class GameEngine : NetworkBehaviour
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
-            SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
+            SpawnPlayer(Role.Human, NetworkManager.ServerClientId, true);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
-            SpawnNPC();
+            SpawnNPC(true);
             return;
         }
 
@@ -47,11 +48,12 @@ public class GameEngine : NetworkBehaviour
             Debug.LogError("NetworkManager is not in this scene.");
     }
 
-    private void SpawnNPC()
+    private void SpawnNPC(bool spectate = false)
     {
         Debug.Log($"mup SpawnNPC");
         GameObject clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
         clone.transform.position = new Vector3(5.0f, 3.0f, 0);
+        clone.GetComponent<CharacterController>().toSpectate = spectate;
         clone.GetComponent<NetworkObject>().Spawn(true);
     }
 
@@ -74,7 +76,8 @@ public class GameEngine : NetworkBehaviour
             return;
         }
 
-        clone.GetComponent<CharacterController>().toDisable = disable;
+        clone.GetComponent<CharacterController>().toSpectate = !disable;
+        clone.GetComponent<CharacterController>().toPlayerControl = !disable;
         clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
     }
 
