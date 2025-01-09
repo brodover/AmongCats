@@ -17,9 +17,9 @@ public class GameEngine : NetworkBehaviour
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
-            SpawnPlayer(Role.Human, NetworkManager.ServerClientId, true);
+            SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
-            SpawnNPC(true);
+            SpawnNPC();
             return;
         }
 

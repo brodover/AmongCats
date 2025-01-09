@@ -7,60 +7,67 @@ using Assets.Scripts.Game;
 using NUnit.Framework;
 using Unity.Burst.Intrinsics;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class MoveNpc : NetworkBehaviour
 {
-    public Transform target; // The target object (e.g., player)
+    public Transform target; // to avoid LOS
+
     private Vector3 _currentTarget = Vector3.zero;
     private Vector3 _constrainedDirection;
 
-    private float _searchRadius = 10f; // How far to search for a spot
-    private float _waitTime = 1f;
-    private int _toShuffleCountdown = 0;
-
-    private const float MAX_WAIT_TIME = 5f;
-    private const float STOPPING_DISTANCE = 0.1f;
-    private const float MIN_MOVE_DISTANCE = 0.02f;
-
     private int _currentCornerIndex = 0;
     private NavMeshPath _path;
-    private Vector3[] _randomCentrePoints = new [] { new Vector3(27f, 10f, 0f), new Vector3(-27f, 10f, 0f), new Vector3(27f, -10f, 0f), new Vector3(-27f, -10f, 0f), new Vector3(-18.9f, 0.7f, 0f), new Vector3(13.4f, 1f, 0f) }; 
+
+    private float _wait_time = 1f;
+    private int _toShuffleCountdown = 0;
+    private Vector3[] _randomCentrePoints = new[] { new Vector3(27f, 10f, 0f), new Vector3(-27f, 10f, 0f), new Vector3(27f, -10f, 0f), new Vector3(-27f, -10f, 0f), new Vector3(-18.9f, 0.7f, 0f), new Vector3(13.4f, 1f, 0f) };
+
+    private const float SEARCH_RADIUS = 10f; // radius around a random centre point
+    private const float MAX_WAIT_TIME = 5f;
+    private const float STOPPING_DISTANCE = 0.3f;
+    private const float FLOAT_ZERO_ERROR = 0.1f;
+    private const float SLOW_TURNING_ANGLE = 10f;
 
     private NavMeshAgent agent;
-    private Transform spriteTransform;
+    private Transform st;
 
     private GameObject _testMoveToMarker;
     private GameObject _testSteerToMarker;
 
 
-    void Awake()
+    private void Awake()
     {
         target = GameObject.FindGameObjectWithTag("Human").transform;
+        st = transform.GetChild(0).transform;
 
-        agent = GetComponent<NavMeshAgent>();
-        spriteTransform = transform.GetChild(0).transform;
-
-        agent.updateRotation = false;
-        agent.updateUpAxis = false;
-        agent.isStopped = true;
-
-        agent.autoBraking = false;
-        agent.stoppingDistance = STOPPING_DISTANCE;
-        agent.angularSpeed = 10f;
-
-        int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
-        agent.areaMask = ~(1 << notWalkableArea);
-
-        agent.speed = ClientCommon.Game.CatMovementSpeed;
-        agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed;
-
+        InitAgent();
         _path = new NavMeshPath();
 
         // TEST
         _testMoveToMarker = GameObject.Find("Marker");
         _testSteerToMarker = GameObject.Find("SteeringMarker");
+    }
+
+    private void InitAgent()
+    {
+        agent = GetComponent<NavMeshAgent>();
+
+        agent.updateRotation = false;
+        agent.updateUpAxis = false;
+        agent.isStopped = true;
+
+        agent.speed = ClientCommon.Game.CatMovementSpeed;
+        agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed;
+        agent.stoppingDistance = STOPPING_DISTANCE;
+        agent.angularSpeed = SLOW_TURNING_ANGLE;
+        agent.autoBraking = false;
+
+        int notWalkableArea = NavMesh.GetAreaFromName("Not Walkable");
+        agent.areaMask = ~(1 << notWalkableArea);
+
     }
 
     private void MoveToOutOfSightSpot()
@@ -76,18 +83,21 @@ public class MoveNpc : NetworkBehaviour
 
         for (int i = 0; i < attempts; i++)
         {
-            Vector3 randomPoint = GetRandomPointOnNavMesh(_randomCentrePoints[_toShuffleCountdown], _searchRadius);
+            Vector3 randomPoint = GetRandomPointOnNavMesh(_randomCentrePoints[_toShuffleCountdown], SEARCH_RADIUS);
             if (randomPoint != Vector3.zero && !IsVisibleToTarget(randomPoint))
             {
                 randomPoint.z = transform.position.z;
                 agent.CalculatePath(randomPoint, _path);
-                _currentCornerIndex = 0;
-                agent.isStopped = false;
-                Debug.Log($"_path.corners { _path.corners.Length}, { _path.status}: {string.Join(",", _path.corners)}");
 
                 if (_testMoveToMarker)
                     _testMoveToMarker.transform.position = randomPoint; // TEST
-                Debug.Log($"mup Success at #{i}!!! Moving to {randomPoint}");
+                //Debug.Log($"mup Success at #{i}!!! Set final target to {randomPoint}");
+
+                _currentCornerIndex = 0;
+                UpdateNextTarget();
+                UpdateDirection(_currentTarget - transform.position);
+                agent.isStopped = false;
+
 
                 return;
             }
@@ -127,28 +137,32 @@ public class MoveNpc : NetworkBehaviour
         return true;
     }
 
-    Vector2 ConstrainDirection(Vector2 inputDirection)
+    Vector2 ConstrainDirection(Vector2 move)
     {
-        var constrainedDirection = new Vector2(Mathf.Abs(inputDirection.x), Mathf.Abs(inputDirection.y));
+        var constrainedDirection = move.normalized;
+        var absMove = move.Abs();
 
         // Prioritize diagonal movement first
-        if (constrainedDirection.x > MIN_MOVE_DISTANCE && constrainedDirection.y > MIN_MOVE_DISTANCE)
+        if (absMove.x > agent.stoppingDistance && absMove.y > agent.stoppingDistance)
         {
-            constrainedDirection = new Vector2(Mathf.Sign(inputDirection.x), Mathf.Sign(inputDirection.y));
+            constrainedDirection = new Vector2(Mathf.Sign(constrainedDirection.x), Mathf.Sign(constrainedDirection.y));
         }
         // Then shorter distance next
-        else if (constrainedDirection.x < constrainedDirection.y && constrainedDirection.x > MIN_MOVE_DISTANCE
-            || constrainedDirection.x > constrainedDirection.y)
+        else if (absMove.x < absMove.y && absMove.x > agent.stoppingDistance)
         {
-            constrainedDirection = new Vector2(Mathf.Sign(inputDirection.x), 0); // Left or Right
+            constrainedDirection = new Vector2(Mathf.Sign(constrainedDirection.x), 0f); // Left or Right
+        }
+        else if (absMove.y < absMove.x && absMove.y > agent.stoppingDistance)
+        {
+            constrainedDirection = new Vector2(0f, Mathf.Sign(constrainedDirection.y)); // Up or Down
         }
         else
         {
-            constrainedDirection = new Vector2(0, Mathf.Sign(inputDirection.y)); // Up or Down
+            return constrainedDirection;
         }
 
         // Renormalize to match original direction's magnitude
-        constrainedDirection = constrainedDirection.normalized * inputDirection.magnitude;
+        constrainedDirection = constrainedDirection.normalized;
 
         return constrainedDirection;
     }
@@ -187,62 +201,95 @@ public class MoveNpc : NetworkBehaviour
         return true; // All points valid and no obstructions detected
     }
 
-    private void Update()
-    {
-        // Handle Waiting State
-        if (agent.isStopped)
-        {
-            HandleWaiting();
-            return;
-        }
-
-        // Handle Movement Along Path
-        if (_path == null || _path.corners.Length == 0)
-            return;
-
-        // Check if the agent reached the current target
-        if (HasReachedCurrentTarget())
-        {
-            MoveToNextCorner();
-        }
-
-        // Adjust direction if needed
-        AdjustDirectionIfAligned();
-
-        // Apply Movement
-        ApplyMovement();
-    }
-
     /// <summary>
     /// Handles waiting logic when the agent is stopped.
     /// </summary>
     private void HandleWaiting()
     {
-        if (_waitTime < 0f)
+        if (_wait_time < 0f)
         {
             MoveToOutOfSightSpot();
-            _waitTime += UnityEngine.Random.Range(3f, MAX_WAIT_TIME);
+            _wait_time += UnityEngine.Random.Range(3f, MAX_WAIT_TIME);
         }
         else
         {
-            _waitTime -= Time.deltaTime;
+            _wait_time -= Time.deltaTime;
         }
     }
 
     /// <summary>
     /// Checks if the agent has reached the current target corner.
+    /// Changes tranform position if true
     /// </summary>
-    private bool HasReachedCurrentTarget()
+    private bool HasReachedCurrentTarget(Vector2 move)
     {
-        return _currentCornerIndex == 0 ||
-               (Mathf.Abs(_currentTarget.x - transform.position.x) <= agent.stoppingDistance &&
-                Mathf.Abs(_currentTarget.y - transform.position.y) <= agent.stoppingDistance);
+        if (move.magnitude <= agent.stoppingDistance ||
+            ((_constrainedDirection.x < 0 && move.x > 0 || _constrainedDirection.x > 0 && move.x < 0) &&
+            (_constrainedDirection.y < 0 && move.y > 0 || _constrainedDirection.y > 0 && move.y < 0)))
+        {
+            transform.position = new Vector2(_currentTarget.x, transform.position.y);
+            agent.nextPosition = transform.position;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
-    /// Moves to the next corner in the path.
+    /// Checks if the agent is aligned along a single axis.
+    /// Changes tranform position if true
     /// </summary>
-    private void MoveToNextCorner()
+    private bool IsAlignedWithTarget(Vector2 move)
+    {
+        // was going diagonal but in line on one axis now
+        if (Mathf.Abs(_constrainedDirection.x) > FLOAT_ZERO_ERROR
+             && Mathf.Abs(_constrainedDirection.y) > FLOAT_ZERO_ERROR)
+        {
+            // snap on x axis
+            if (Mathf.Abs(move.x) <= agent.stoppingDistance || _constrainedDirection.x < 0 && move.x > 0 || _constrainedDirection.x > 0 && move.x < 0)
+            {
+                transform.position = new Vector2(_currentTarget.x, transform.position.y);
+                agent.nextPosition = transform.position;
+                return true;
+            }
+            // snap on y axis
+            else if (Mathf.Abs(move.y) <= agent.stoppingDistance || _constrainedDirection.y < 0 && move.y > 0 || _constrainedDirection.y > 0 && move.y < 0)
+            {
+                transform.position = new Vector2(transform.position.x, _currentTarget.y);
+                agent.nextPosition = transform.position;
+                return true;
+            }
+        }
+        // was going horizontal but in line on x axis now
+        else if (Mathf.Abs(_constrainedDirection.x) > FLOAT_ZERO_ERROR)
+        {
+            // snap on x axis
+            if (Mathf.Abs(move.x) <= agent.stoppingDistance || _constrainedDirection.x < 0 && move.x > 0 || _constrainedDirection.x > 0 && move.x < 0)
+            {
+                transform.position = new Vector2(_currentTarget.x, transform.position.y);
+                agent.nextPosition = transform.position;
+                return true;
+            }
+        }
+        // was going vertical but in line on y axis now
+        else if (Mathf.Abs(_constrainedDirection.y) > FLOAT_ZERO_ERROR)
+        {
+            // snap on y axis
+            if (Mathf.Abs(move.y) <= agent.stoppingDistance || _constrainedDirection.y < 0 && move.y > 0 || _constrainedDirection.y > 0 && move.y < 0)
+            {
+                transform.position = new Vector2(transform.position.x, _currentTarget.y);
+                agent.nextPosition = transform.position;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Updates target to the next corner in the path.
+    /// </summary>
+    private void UpdateNextTarget()
     {
         _currentCornerIndex++;
         if (_currentCornerIndex < _path.corners.Length)
@@ -251,60 +298,18 @@ public class MoveNpc : NetworkBehaviour
 
             if (_testSteerToMarker)
                 _testSteerToMarker.transform.position = _currentTarget; // TEST
-
-            UpdateDirection();
-        }
-        else
-        {
-            StopAgent();
+            //Debug.Log($"Next target #{_currentCornerIndex} moving from {transform.position} to {_currentTarget}");
         }
     }
 
     /// <summary>
     /// Updates movement direction and sprite facing direction.
     /// </summary>
-    private void UpdateDirection()
+    private void UpdateDirection(Vector2 move)
     {
-        Vector3 direction = (_currentTarget - transform.position).normalized;
-        _constrainedDirection = ConstrainDirection(new Vector3(direction.x, direction.y, 0f));
-        Debug.Log($"Next dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
-
+        _constrainedDirection = ConstrainDirection(move);
         UpdateSpriteFacingDirection();
-    }
-
-    /// <summary>
-    /// Adjusts direction if the agent aligns along a single axis.
-    /// </summary>
-    private void AdjustDirectionIfAligned()
-    {
-        if (IsAlignedWithTarget())
-        {
-            Vector3 direction = (_currentTarget - transform.position).normalized;
-            _constrainedDirection = ConstrainDirection(new Vector3(direction.x, direction.y, 0f));
-            Debug.Log($"Adjusted dir #{_currentCornerIndex}: {direction} ... {_constrainedDirection}");
-            UpdateSpriteFacingDirection();
-        }
-    }
-
-    /// <summary>
-    /// Checks if the agent is aligned along a single axis.
-    /// </summary>
-    private bool IsAlignedWithTarget()
-    {
-        return
-            // was diagonal but in line on one axis now
-            (Mathf.Abs(_constrainedDirection.x) > MIN_MOVE_DISTANCE &&
-             Mathf.Abs(_constrainedDirection.y) > MIN_MOVE_DISTANCE &&
-             (Mathf.Abs(_currentTarget.x - transform.position.x) <= STOPPING_DISTANCE ||
-              Mathf.Abs(_currentTarget.y - transform.position.y) <= STOPPING_DISTANCE))
-            ||
-            // was going horizontal but in line on x axis now
-            (Mathf.Abs(_constrainedDirection.x) > MIN_MOVE_DISTANCE &&
-             Mathf.Abs(_currentTarget.x - transform.position.x) <= STOPPING_DISTANCE)
-            ||
-            // was going vertical but in line on y axis now
-            (Mathf.Abs(_constrainedDirection.y) > MIN_MOVE_DISTANCE &&
-             Mathf.Abs(_currentTarget.y - transform.position.y) <= STOPPING_DISTANCE);
+        //Debug.Log($"#{_currentCornerIndex} Change dir moving from {transform.position} to {_currentTarget}: {move} ... {_constrainedDirection}");
     }
 
     /// <summary>
@@ -315,12 +320,35 @@ public class MoveNpc : NetworkBehaviour
         if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
         {
             float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
-            spriteTransform.localScale = new Vector3(
-                Mathf.Abs(spriteTransform.localScale.x) * -facingDir,
-                spriteTransform.localScale.y,
+            st.localScale = new Vector3(
+                Mathf.Abs(st.localScale.x) * -facingDir,
+                st.localScale.y,
                 transform.localScale.z
             );
         }
+    }
+
+    private void CheckUpdateMovement(Vector2 move)
+    {
+        // Check if the agent reached the current target
+        if (HasReachedCurrentTarget(move))
+        {
+            UpdateNextTarget();
+            if (_currentCornerIndex < _path.corners.Length)
+            {
+                UpdateDirection(_currentTarget - transform.position);
+            }
+            else
+            {
+                StopAgent();
+            }
+        }
+        // Adjust direction if needed
+        else if (IsAlignedWithTarget(move))
+        {
+            UpdateDirection(_currentTarget - transform.position);
+        }
+
     }
 
     /// <summary>
@@ -340,10 +368,24 @@ public class MoveNpc : NetworkBehaviour
     /// </summary>
     private void StopAgent()
     {
-        Debug.Log("Stopped");
-        _constrainedDirection = Vector3.zero;
+        //Debug.Log($"Stopped at {transform.position}");
         agent.isStopped = true;
-        _path.ClearCorners();
+        _constrainedDirection = Vector3.zero;
         _currentTarget = Vector3.zero;
+        _path.ClearCorners();
     }
+
+    private void Update()
+    {
+        if (agent.isStopped)
+        {
+            HandleWaiting();
+            return;
+        }
+
+        CheckUpdateMovement(_currentTarget - transform.position);
+
+        ApplyMovement();
+    }
+
 }

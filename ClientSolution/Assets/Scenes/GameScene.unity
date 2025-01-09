@@ -787,7 +787,7 @@ Camera:
   m_GameObject: {fileID: 519420028}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 4
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -857,6 +857,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0f49067015249d4aab324dd8d637b53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  fovRenderTexture: {fileID: 8400000, guid: 945e31d2d6a933a4aae12c59ebf49852, type: 2}
   target: {fileID: 0}
   smoothTime: 0.3
 --- !u!1001 &539155033
@@ -1072,7 +1073,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &558815269
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2297,7 +2298,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &1643031527
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -2454,7 +2455,7 @@ Camera:
   m_GameObject: {fileID: 1646344387}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 4
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
