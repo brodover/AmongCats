@@ -38,7 +38,7 @@ public class MoveNpc : NetworkBehaviour
     private GameObject _testSteerToMarker;
 
 
-    private void Awake()
+    void Awake()
     {
         target = GameObject.FindGameObjectWithTag("Human").transform;
         st = transform.GetChild(0).transform;
@@ -213,7 +213,7 @@ public class MoveNpc : NetworkBehaviour
         }
         else
         {
-            _wait_time -= Time.deltaTime;
+            _wait_time -= Time.fixedDeltaTime;
         }
     }
 
@@ -358,7 +358,7 @@ public class MoveNpc : NetworkBehaviour
     {
         if (_constrainedDirection != Vector3.zero)
         {
-            Vector3 movement = _constrainedDirection * agent.speed * Time.deltaTime;
+            Vector3 movement = _constrainedDirection * agent.speed * Time.fixedDeltaTime;
             agent.Move(movement);
         }
     }
@@ -375,7 +375,7 @@ public class MoveNpc : NetworkBehaviour
         _path.ClearCorners();
     }
 
-    private void Update()
+    void FixedUpdate()
     {
         if (agent.isStopped)
         {

@@ -6,7 +6,7 @@ using UnityEngine.AI;
 public class CharacterController : NetworkBehaviour
 {
     public bool toPlayerControl = true;
-    public bool toSpectate = false;
+    public bool toSpectate = true;
 
     public override void OnNetworkSpawn()
     {
@@ -22,19 +22,19 @@ public class CharacterController : NetworkBehaviour
                     gameObject.AddComponent<MoveInput>();
                 }
                 transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = 3; // 1 higher than other characters
+
+                if (toSpectate)
+                {
+                    var mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                    gameObject.AddComponent<lightcaster>();
+                    mainCamera.GetComponent<CameraFollow>().target = gameObject.transform;
+                }
             }
             // NPC
             else
             {
                 gameObject.AddComponent<NavMeshAgent>();
                 gameObject.AddComponent<MoveNpc>();
-            }
-
-            if (toSpectate)
-            {
-                var mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-                gameObject.AddComponent<lightcaster>();
-                mainCamera.GetComponent<CameraFollow>().target = gameObject.transform;
             }
         }
     }

@@ -53,7 +53,7 @@ public class GameEngine : NetworkBehaviour
         Debug.Log($"mup SpawnNPC");
         GameObject clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
         clone.transform.position = new Vector3(5.0f, 3.0f, 0);
-        clone.GetComponent<CharacterController>().toSpectate = spectate;
+        //clone.GetComponent<CharacterController>().toSpectate = spectate;
         clone.GetComponent<NetworkObject>().Spawn(true);
     }
 
@@ -76,8 +76,8 @@ public class GameEngine : NetworkBehaviour
             return;
         }
 
-        clone.GetComponent<CharacterController>().toSpectate = !disable;
-        clone.GetComponent<CharacterController>().toPlayerControl = !disable;
+        //clone.GetComponent<CharacterController>().toPlayerControl = !disable;
+        //clone.GetComponent<CharacterController>().toSpectate = !disable;
         clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
     }
 
@@ -87,7 +87,7 @@ public class GameEngine : NetworkBehaviour
         Debug.Log($"Request Server to spawn my player: {clientId}, {IsServer}");
         if (!IsServer) return;
 
-        SpawnPlayer(Role.Cat, clientId);
+        SpawnPlayer(Role.Cat, clientId, true);
     }
 
     private void HandleMatchClosed()
