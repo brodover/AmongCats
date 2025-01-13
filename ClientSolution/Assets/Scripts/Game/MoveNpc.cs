@@ -213,7 +213,7 @@ public class MoveNpc : NetworkBehaviour
         }
         else
         {
-            _wait_time -= Time.fixedDeltaTime;
+            _wait_time -= Time.deltaTime;
         }
     }
 
@@ -358,7 +358,7 @@ public class MoveNpc : NetworkBehaviour
     {
         if (_constrainedDirection != Vector3.zero)
         {
-            Vector3 movement = _constrainedDirection * agent.speed * Time.fixedDeltaTime;
+            Vector3 movement = _constrainedDirection * agent.speed * Time.deltaTime;
             agent.Move(movement);
         }
     }
@@ -375,7 +375,7 @@ public class MoveNpc : NetworkBehaviour
         _path.ClearCorners();
     }
 
-    void FixedUpdate()
+    void Update()
     {
         if (agent.isStopped)
         {

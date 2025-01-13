@@ -8,18 +8,26 @@ using static SharedLibrary.Common;
 
 public class GameEngine : NetworkBehaviour
 {
+    [SerializeField] 
+    private GameTimer gameTimer;
+
     private bool isClosed = false;
     private int clientCount = 0;
+
+    public event Action OnGameStart;
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        gameTimer.OnTimerEnded += HandleGameTimerEnded;
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
             SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
             SpawnNPC();
+            gameTimer.StartTimer();
             return;
         }
 
@@ -36,6 +44,7 @@ public class GameEngine : NetworkBehaviour
                     if (clientCount == 2)
                     {
                         SpawnNPC();
+                        gameTimer.StartTimer();
                     }
                 };
             }
@@ -90,12 +99,25 @@ public class GameEngine : NetworkBehaviour
         SpawnPlayer(Role.Cat, clientId, true);
     }
 
-    private void HandleMatchClosed()
+    private void HandleSeverMatchClosed()
     {
         try
         {
-            Debug.Log($"HandleMatchClosed");
+            Debug.Log($"HandleSeverMatchClosed");
             isClosed = true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error: {ex.Message}");
+        }
+    }
+
+    private void HandleGameTimerEnded()
+    {
+        try
+        {
+            Debug.Log($"HandleGameTimerEnded: Human wins");
+            
         }
         catch (Exception ex)
         {
@@ -130,7 +152,12 @@ public class GameEngine : NetworkBehaviour
     {
         if (SignalRConnectionManager.Instance != null)
         {
-            SignalRConnectionManager.Instance.OnMatchClosed += HandleMatchClosed;
+            SignalRConnectionManager.Instance.OnMatchClosed += HandleSeverMatchClosed;
+        }
+
+        if (gameTimer != null)
+        {
+            gameTimer.OnTimerEnded += HandleGameTimerEnded;
         }
     }
 
@@ -138,7 +165,12 @@ public class GameEngine : NetworkBehaviour
     {
         if (SignalRConnectionManager.Instance != null)
         {
-            SignalRConnectionManager.Instance.OnMatchClosed -= HandleMatchClosed;
+            SignalRConnectionManager.Instance.OnMatchClosed -= HandleSeverMatchClosed;
+        }
+
+        if (gameTimer != null)
+        {
+            gameTimer.OnTimerEnded -= HandleGameTimerEnded;
         }
     }
 
