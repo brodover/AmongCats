@@ -14,6 +14,7 @@ public static class ClientCommon
     {
         public const string HumanPrefab = "Prefabs/Human";
         public const string CatPrefab = "Prefabs/Cat";
+        public const string GameTimerPrefab = "Prefabs/Timer";
     }
 
     public static class Scene

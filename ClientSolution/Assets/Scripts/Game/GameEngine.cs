@@ -9,6 +9,7 @@ using static SharedLibrary.Common;
 public class GameEngine : NetworkBehaviour
 {
     [SerializeField] 
+    private Canvas canvas;
     private GameTimer gameTimer;
 
     private bool isClosed = false;
@@ -20,14 +21,16 @@ public class GameEngine : NetworkBehaviour
     {
         base.OnNetworkSpawn();
 
-        gameTimer.OnTimerEnded += HandleGameTimerEnded;
+        SpawnGameTimer();
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
             SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
             SpawnNPC();
+            gameTimer.transform.SetParent(canvas.transform, false);
             gameTimer.StartTimer();
+            gameTimer.OnTimerEnded += HandleGameTimerEnded;
             return;
         }
 
@@ -44,7 +47,9 @@ public class GameEngine : NetworkBehaviour
                     if (clientCount == 2)
                     {
                         SpawnNPC();
+                        gameTimer.transform.SetParent(canvas.transform, false);
                         gameTimer.StartTimer();
+                        gameTimer.OnTimerEnded += HandleGameTimerEnded;
                     }
                 };
             }
@@ -88,6 +93,23 @@ public class GameEngine : NetworkBehaviour
         //clone.GetComponent<CharacterController>().toPlayerControl = !disable;
         //clone.GetComponent<CharacterController>().toSpectate = !disable;
         clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
+    }
+
+    private void SpawnGameTimer()
+    {
+        if (IsServer)
+        {
+            // Spawn the GameTimer on the network
+            var timerInstance = Instantiate(Resources.Load<GameObject>(ClientCommon.File.GameTimerPrefab));
+            var networkObject = timerInstance.GetComponent<NetworkObject>();
+
+            if (networkObject != null)
+            {
+                networkObject.Spawn(); // Spawns the object across the network
+            }
+
+            gameTimer = timerInstance.GetComponent<GameTimer>();
+        }
     }
 
     [ServerRpc(RequireOwnership = false)]

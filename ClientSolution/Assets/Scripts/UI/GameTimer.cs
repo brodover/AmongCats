@@ -1,33 +1,34 @@
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameTimer : MonoBehaviour
+public class GameTimer : NetworkBehaviour
 {
-    public float gameDuration = 180f; // Total game time in seconds (3 minutes)
-    private float timeRemaining;
+    public const float GAME_DURATION = 180f; // Total game time in seconds (3 minutes)
+    private float timeRemaining = 0f;
+    private NetworkVariable<bool> isGameOver = new NetworkVariable<bool>(true);
 
     public TMP_Text timerText; // UI Text to display the timer
     //public GameObject endGameUI; // UI element to show when the game ends
-
-    private bool isGameOver = true;
 
     public delegate void TimerEndedHandler();
 
     public event TimerEndedHandler OnTimerEnded;    // Inform GameEngine
 
-    void Start()
+    private void Awake()
     {
-        timeRemaining = gameDuration;
+        timeRemaining = GAME_DURATION;
         UpdateTimerUI();
-        //endGameUI.SetActive(false); // Hide end game UI at the start
     }
 
     public void StartTimer()
     {
-        isGameOver = false;
-        Debug.Log("Start timer.");
-        
+        if (IsServer)
+        {
+            isGameOver.Value = false;
+            Debug.Log("Start timer.");
+        }
     }
 
     void UpdateTimerUI()
@@ -39,7 +40,7 @@ public class GameTimer : MonoBehaviour
 
     void EndGame()
     {
-        isGameOver = true;
+        isGameOver.Value = true;
         Debug.Log("Time's up! Game Over.");
         OnTimerEnded?.Invoke();
         //endGameUI.SetActive(true); // Show end game UI
@@ -48,7 +49,7 @@ public class GameTimer : MonoBehaviour
 
     void Update()
     {
-        if (isGameOver)
+        if (isGameOver.Value)
             return;
 
         if (timeRemaining > 0)
