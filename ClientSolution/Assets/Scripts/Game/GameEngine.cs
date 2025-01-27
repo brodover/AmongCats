@@ -11,26 +11,23 @@ public class GameEngine : NetworkBehaviour
     [SerializeField] 
     private Canvas canvas;
     private GameTimer gameTimer;
+    private MessMeter messMeter;
 
     private bool isClosed = false;
     private int clientCount = 0;
-
-    public event Action OnGameStart;
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        SpawnGameTimer();
+        SpawnNGOs();
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
             SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
             SpawnNPC();
-            gameTimer.transform.SetParent(canvas.transform, false);
-            gameTimer.StartTimer();
-            gameTimer.OnTimerEnded += HandleGameTimerEnded;
+            InitNGOs();
             return;
         }
 
@@ -47,9 +44,7 @@ public class GameEngine : NetworkBehaviour
                     if (clientCount == 2)
                     {
                         SpawnNPC();
-                        gameTimer.transform.SetParent(canvas.transform, false);
-                        gameTimer.StartTimer();
-                        gameTimer.OnTimerEnded += HandleGameTimerEnded;
+                        InitNGOs();
                     }
                 };
             }
@@ -62,9 +57,20 @@ public class GameEngine : NetworkBehaviour
             Debug.LogError("NetworkManager is not in this scene.");
     }
 
+    private void SpawnNGOs()
+    {
+        SpawnGameTimer();
+        SpawnMessMeter();
+    }
+
+    private void InitNGOs()
+    {
+        InitGameTimer();
+        InitMessMeter();
+    }
+
     private void SpawnNPC(bool spectate = false)
     {
-        Debug.Log($"mup SpawnNPC");
         GameObject clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
         clone.transform.position = new Vector3(5.0f, 3.0f, 0);
         //clone.GetComponent<CharacterController>().toSpectate = spectate;
@@ -100,16 +106,45 @@ public class GameEngine : NetworkBehaviour
         if (IsServer)
         {
             // Spawn the GameTimer on the network
-            var timerInstance = Instantiate(Resources.Load<GameObject>(ClientCommon.File.GameTimerPrefab));
-            var networkObject = timerInstance.GetComponent<NetworkObject>();
+            var instance = Instantiate(Resources.Load<GameObject>(ClientCommon.File.GameTimerPrefab));
+            var networkObject = instance.GetComponent<NetworkObject>();
 
             if (networkObject != null)
             {
                 networkObject.Spawn(); // Spawns the object across the network
             }
 
-            gameTimer = timerInstance.GetComponent<GameTimer>();
+            gameTimer = instance.GetComponent<GameTimer>();
         }
+    }
+
+    private void InitGameTimer()
+    {
+        gameTimer.transform.SetParent(canvas.transform, false);
+        gameTimer.OnTimerEnded += HandleGameTimerEnded;
+        gameTimer.StartTimer();
+    }
+
+    private void SpawnMessMeter()
+    {
+        if (IsServer)
+        {
+            var instance = Instantiate(Resources.Load<GameObject>(ClientCommon.File.MessMeterPrefab));
+            var networkObject = instance.GetComponent<NetworkObject>();
+
+            if (networkObject != null)
+            {
+                networkObject.Spawn();
+            }
+
+            messMeter = instance.GetComponent<MessMeter>();
+        }
+    }
+
+    private void InitMessMeter()
+    {
+        messMeter.transform.SetParent(canvas.transform, false);
+        messMeter.OnMaxMessReached += HandleGameTimerEnded;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -125,7 +160,7 @@ public class GameEngine : NetworkBehaviour
     {
         try
         {
-            Debug.Log($"HandleSeverMatchClosed");
+            Debug.Log($"HandleSeverMatchClosed: Draw");
             isClosed = true;
         }
         catch (Exception ex)
@@ -146,6 +181,20 @@ public class GameEngine : NetworkBehaviour
             Debug.LogError($"Error: {ex.Message}");
         }
     }
+
+    private void HandleMaxMessReached()
+    {
+        try
+        {
+            Debug.Log($"HandleMaxMessReached: Cat wins");
+
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error: {ex.Message}");
+        }
+    }
+
 
     private void OnGameClose()
     {
@@ -176,11 +225,6 @@ public class GameEngine : NetworkBehaviour
         {
             SignalRConnectionManager.Instance.OnMatchClosed += HandleSeverMatchClosed;
         }
-
-        if (gameTimer != null)
-        {
-            gameTimer.OnTimerEnded += HandleGameTimerEnded;
-        }
     }
 
     private void OnDisable()
@@ -189,11 +233,15 @@ public class GameEngine : NetworkBehaviour
         {
             SignalRConnectionManager.Instance.OnMatchClosed -= HandleSeverMatchClosed;
         }
+    }
 
+    public override void OnDestroy()
+    {
         if (gameTimer != null)
         {
             gameTimer.OnTimerEnded -= HandleGameTimerEnded;
         }
-    }
 
+        base.OnDestroy();
+    }
 }

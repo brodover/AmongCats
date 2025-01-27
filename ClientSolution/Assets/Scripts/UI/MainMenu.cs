@@ -10,8 +10,10 @@ using static SharedLibrary.Common;
 public class MainMenu : MonoBehaviour
 {
     private Role role = Role.Random;
-    private bool isMatched = false;
+    private bool isConnected;
+    private bool isMatched;
 
+    public GameObject overlay;
     public GameObject selectMenu;
     public GameObject queueMenu;
     [Space]
@@ -24,6 +26,10 @@ public class MainMenu : MonoBehaviour
 
     private void Start()
     {
+        isConnected = SignalRConnectionManager.MyPlayer != null;
+        isMatched = false;
+
+        overlay.SetActive(true);
         ShowSelectMenu(true);
 
         humanButton.onClick.AddListener(() => OnSelect(Role.Human));
@@ -35,7 +41,6 @@ public class MainMenu : MonoBehaviour
 
     private async void OnSelect(Role role)
     {
-        //OnGameStart();
         this.role = role;
         queueText.text = $"Queuing as {role}";
         cancelButton.gameObject.SetActive(false);
@@ -94,11 +99,25 @@ public class MainMenu : MonoBehaviour
         }
     }
 
+    private void HandlePlayerConnected()
+    {
+        try
+        {
+            Debug.Log($"HandlePlayerConnected");
+            isConnected = true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error: {ex.Message}");
+        }
+    }
+
     private void OnEnable()
     {
         if (SignalRConnectionManager.Instance != null)
         {
             SignalRConnectionManager.Instance.OnMatchCreated += HandleMatchCreated;
+            SignalRConnectionManager.Instance.OnPlayerConnected += HandlePlayerConnected;
         }
     }
 
@@ -107,11 +126,18 @@ public class MainMenu : MonoBehaviour
         if (SignalRConnectionManager.Instance != null)
         {
             SignalRConnectionManager.Instance.OnMatchCreated -= HandleMatchCreated;
+            SignalRConnectionManager.Instance.OnPlayerConnected += HandlePlayerConnected;
         }
     }
 
     private void Update()
     {
+        if (isConnected)
+        {
+            isConnected = false;
+            overlay.SetActive(false);
+        }
+
         if (isMatched)
         {
             isMatched = false;

@@ -17,6 +17,7 @@ public class SignalRConnectionManager
 
     public event Action OnMatchCreated;
     public event Action OnMatchClosed;
+    public event Action OnPlayerConnected;
 
     private static Player _myPlayer = null;
 
@@ -86,6 +87,7 @@ public class SignalRConnectionManager
             {
                 Debug.Log($"PlayerConnected: {player.Id}");
                 _myPlayer = player;
+                OnPlayerConnected?.Invoke();
             });
 
             _connection.On<Room>(HubMsg.ToClient.MatchCreated, room =>

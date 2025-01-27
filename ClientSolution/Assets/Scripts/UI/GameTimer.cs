@@ -5,21 +5,21 @@ using UnityEngine.UI;
 
 public class GameTimer : NetworkBehaviour
 {
-    public const float GAME_DURATION = 180f; // Total game time in seconds (3 minutes)
+    private const float GAME_DURATION = 180f; // Total game time in seconds (3 minutes)
     private float timeRemaining = 0f;
     private NetworkVariable<bool> isGameOver = new NetworkVariable<bool>(true);
 
-    public TMP_Text timerText; // UI Text to display the timer
-    //public GameObject endGameUI; // UI element to show when the game ends
+    public TMP_Text timerText;
+    //public GameObject endGameUI;
 
     public delegate void TimerEndedHandler();
 
     public event TimerEndedHandler OnTimerEnded;    // Inform GameEngine
 
-    private void Awake()
+    void Awake()
     {
         timeRemaining = GAME_DURATION;
-        UpdateTimerUI();
+        UpdateUI();
     }
 
     public void StartTimer()
@@ -31,7 +31,7 @@ public class GameTimer : NetworkBehaviour
         }
     }
 
-    void UpdateTimerUI()
+    void UpdateUI()
     {
         int minutes = Mathf.FloorToInt(timeRemaining / 60);
         int seconds = Mathf.FloorToInt(timeRemaining % 60);
@@ -60,7 +60,7 @@ public class GameTimer : NetworkBehaviour
                 timeRemaining = 0;
                 EndGame();
             }
-            UpdateTimerUI();
+            UpdateUI();
         }
     }
 }
