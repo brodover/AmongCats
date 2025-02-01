@@ -32,7 +32,7 @@ public class MoveNpc : NetworkBehaviour
     private const float SLOW_TURNING_ANGLE = 10f;
 
     private NavMeshAgent agent;
-    private Transform st;
+    private Transform childT;
 
     private GameObject _testMoveToMarker;
     private GameObject _testSteerToMarker;
@@ -41,7 +41,7 @@ public class MoveNpc : NetworkBehaviour
     void Awake()
     {
         target = GameObject.FindGameObjectWithTag("Human").transform;
-        st = transform.GetChild(0).transform;
+        childT = transform.GetChild(0).transform;
 
         InitAgent();
         _path = new NavMeshPath();
@@ -320,9 +320,9 @@ public class MoveNpc : NetworkBehaviour
         if (Mathf.Abs(_constrainedDirection.x) > 0.1f)
         {
             float facingDir = Mathf.Sign(_constrainedDirection.x); // 1 for positive, -1 for negative
-            st.localScale = new Vector3(
-                Mathf.Abs(st.localScale.x) * -facingDir,
-                st.localScale.y,
+            childT.localScale = new Vector3(
+                Mathf.Abs(childT.localScale.x) * -facingDir,
+                childT.localScale.y,
                 transform.localScale.z
             );
         }

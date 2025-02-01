@@ -1,15 +1,19 @@
 using System;
 using SharedLibrary;
+using TMPro;
 using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using static SharedLibrary.Common;
 
 public class GameEngine : NetworkBehaviour
 {
     [SerializeField] 
     private Canvas canvas;
+    [SerializeField]
+    private Button interactBtn;
     private GameTimer gameTimer;
     private MessMeter messMeter;
 
@@ -74,6 +78,7 @@ public class GameEngine : NetworkBehaviour
         GameObject clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
         clone.transform.position = new Vector3(5.0f, 3.0f, 0);
         //clone.GetComponent<CharacterController>().toSpectate = spectate;
+        clone.GetComponent<CharacterController>().InitNPC();
         clone.GetComponent<NetworkObject>().Spawn(true);
     }
 
@@ -85,12 +90,14 @@ public class GameEngine : NetworkBehaviour
         {
             clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.HumanPrefab));
             clone.transform.position = new Vector3(-2.0f, 0, 0);
+            interactBtn.GetComponentInChildren<TMP_Text>().text = "Clean up";
 
         }
         else if (role == Common.Role.Cat)
         {
             clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
             clone.transform.position = new Vector3(5.0f, 0, 0);
+            interactBtn.GetComponentInChildren<TMP_Text>().text = "Mess up";
         }
         else {
             return;
@@ -98,6 +105,7 @@ public class GameEngine : NetworkBehaviour
 
         //clone.GetComponent<CharacterController>().toPlayerControl = !disable;
         //clone.GetComponent<CharacterController>().toSpectate = !disable;
+        clone.GetComponent<CharacterController>().InitPlayer(interactBtn);
         clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
     }
 

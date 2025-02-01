@@ -4,10 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR.Client;
 using SharedLibrary;
-using Unity.Burst.Intrinsics;
-using Unity.Netcode;
 using UnityEngine;
-using static ClientCommon;
 using static SharedLibrary.Common;
 
 public class SignalRConnectionManager

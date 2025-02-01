@@ -6,7 +6,7 @@ namespace Assets.Scripts.Game
     public class MoveInput : MonoBehaviour
     {
         private Rigidbody rb;
-        private Transform st;
+        private Transform childT;
 
         [SerializeField] private float moveSpeed = 13; // default human
 
@@ -20,7 +20,7 @@ namespace Assets.Scripts.Game
         void Awake()
         {
             rb = GetComponent<Rigidbody>();
-            st = transform.GetChild(0).transform;
+            childT = transform.GetChild(0).transform;
 
             _playerInput = new InputSystem_Actions();
 
@@ -85,9 +85,9 @@ namespace Assets.Scripts.Game
             if (_moveInput2.x != 0)
             {
                 float direction = Mathf.Sign(_moveInput2.x); // 1 for positive, -1 for negative
-                st.localScale = new Vector3(
-                    Mathf.Abs(st.localScale.x) * -direction, 
-                    st.localScale.y, st.localScale.z);
+                childT.localScale = new Vector3(
+                    Mathf.Abs(childT.localScale.x) * -direction, 
+                    childT.localScale.y, childT.localScale.z);
             }
         }
     }
