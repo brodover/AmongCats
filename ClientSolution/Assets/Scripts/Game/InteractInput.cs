@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class InteractInput : MonoBehaviour
 {
-    private const float _RANGE = 7f;
+    private const float _RANGE = 2f;
 
     public void OnInteractClick()
     {

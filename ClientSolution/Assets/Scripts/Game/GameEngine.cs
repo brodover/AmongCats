@@ -2,7 +2,6 @@ using System;
 using SharedLibrary;
 using TMPro;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -28,10 +27,11 @@ public class GameEngine : NetworkBehaviour
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
-            SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
+            //SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
             SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
-            SpawnNPC();
+            //SpawnNPC();
             InitNGOs();
+            InitInteractables();
             return;
         }
 
@@ -49,6 +49,7 @@ public class GameEngine : NetworkBehaviour
                     {
                         SpawnNPC();
                         InitNGOs();
+                        InitInteractables();
                     }
                 };
             }
@@ -126,6 +127,24 @@ public class GameEngine : NetworkBehaviour
         }
     }
 
+    private void InitInteractables()
+    {
+        var list = FindObjectsByType<Interactable>(FindObjectsSortMode.None);
+        var messRemaining = ClientCommon.Game.InitMess;
+        var totalRemaining = list.Length-1;
+        foreach (var interactable in list)
+        {
+            interactable.OnStateChanged += HandleInteractableStateChanged;
+            var prob = UnityEngine.Random.Range(0, totalRemaining);
+            if (prob < messRemaining)
+            {
+                interactable.MessUp();
+                messRemaining--;
+            }
+            totalRemaining--;
+        }
+    }
+
     private void InitGameTimer()
     {
         gameTimer.transform.SetParent(canvas.transform, false);
@@ -170,6 +189,19 @@ public class GameEngine : NetworkBehaviour
         {
             Debug.Log($"HandleSeverMatchClosed: Draw");
             isClosed = true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error: {ex.Message}");
+        }
+    }
+
+    private void HandleInteractableStateChanged(bool state)
+    {
+        try
+        {
+            Debug.Log($"HandleInteractableStateChanged: {state}");
+            messMeter.ChangeMess(state);
         }
         catch (Exception ex)
         {
@@ -248,6 +280,12 @@ public class GameEngine : NetworkBehaviour
         if (gameTimer != null)
         {
             gameTimer.OnTimerEnded -= HandleGameTimerEnded;
+        }
+
+        var list = FindObjectsByType<Interactable>(FindObjectsSortMode.None);
+        foreach (var interactable in list)
+        {
+            interactable.OnStateChanged -= HandleInteractableStateChanged;
         }
 
         base.OnDestroy();

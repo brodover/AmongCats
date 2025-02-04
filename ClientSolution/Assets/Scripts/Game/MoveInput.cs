@@ -8,7 +8,7 @@ namespace Assets.Scripts.Game
         private Rigidbody rb;
         private Transform childT;
 
-        [SerializeField] private float moveSpeed = 13; // default human
+        [SerializeField] private float moveSpeed = ClientCommon.Game.HumanMovementSpeed;
 
         private float acceleration;
 

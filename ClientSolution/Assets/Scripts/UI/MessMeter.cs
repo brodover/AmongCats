@@ -8,9 +8,9 @@ public class MessMeter : NetworkBehaviour
 {
     private const int MAX_MESS = 100;
     private const int MIN_MESS = 0;
-    private const int INIT_MESS = 50;
+    private const int MESS_CHANGE_UNIT = 10;
 
-    private NetworkVariable<int> currentMess = new NetworkVariable<int>(INIT_MESS);
+    private NetworkVariable<int> currentMess = new NetworkVariable<int>(0);
 
     public TMP_Text meterText;
 
@@ -22,14 +22,34 @@ public class MessMeter : NetworkBehaviour
         meterText.text = $"{currentMess.Value}%";
     }
 
+    public void ChangeMess(bool isIncrease)
+    {
+        if (isIncrease)
+        {
+            HandleMessChanged(MESS_CHANGE_UNIT);
+        }
+        else
+        {
+            HandleMessChanged(-MESS_CHANGE_UNIT);
+        }
+    }
+
     private void HandleMessChanged(int change)
     {
         currentMess.Value += change;
-        if (currentMess.Value >= MAX_MESS)
+        if (currentMess.Value == MAX_MESS)
         {
             OnMaxMessReached?.Invoke();
+        } 
+        else if (currentMess.Value > MAX_MESS)
+        {
+            Debug.Log($"Mess overflow: {currentMess.Value} ({change})");
+        }
+        else if (currentMess.Value < MIN_MESS)
+        {
+            Debug.Log($"Mess underflow: {currentMess.Value} ({change})");
         }
 
-        currentMess.Value = Math.Max(MIN_MESS, currentMess.Value);
+        UpdateUI();
     }
 }

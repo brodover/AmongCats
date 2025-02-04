@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,9 +13,7 @@ public class GameTimer : NetworkBehaviour
     public TMP_Text timerText;
     //public GameObject endGameUI;
 
-    public delegate void TimerEndedHandler();
-
-    public event TimerEndedHandler OnTimerEnded;    // Inform GameEngine
+    public Action OnTimerEnded;    // Inform GameEngine
 
     void Awake()
     {

@@ -27,6 +27,8 @@ public static class ClientCommon
     public static class Game
     {
         public const float TimeToMaxSpeed = 0.3f;
-        public const float CatMovementSpeed = 18f;
+        public const float HumanMovementSpeed = 7f;
+        public const float CatMovementSpeed = 12f;
+        public const int InitMess = 2;
     }
 }
