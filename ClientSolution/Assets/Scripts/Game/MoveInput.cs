@@ -63,20 +63,25 @@ namespace Assets.Scripts.Game
             if (_moveInput2 != Vector2.zero)
             {
                 // Accelerate towards the target velocity
-                _currentVelocity = Vector2.MoveTowards(
+                /*_currentVelocity = Vector2.MoveTowards(
                     _currentVelocity,
                     targetVelocity,
                     acceleration * Time.fixedDeltaTime
-                );
+                );*/
+
+                _currentVelocity = targetVelocity;
             }
             else
             {
                 // Decelerate when no input is detected
-                _currentVelocity = Vector2.MoveTowards(
+                /*_currentVelocity = Vector2.MoveTowards(
                     _currentVelocity,
                     Vector2.zero,
                     acceleration * Time.fixedDeltaTime
-                );
+                );*/
+
+                _currentVelocity = Vector2.zero;
+                return;
             }
             // Apply movement using Rigidbody
             rb.MovePosition(rb.position + (Vector3)_currentVelocity * Time.fixedDeltaTime);

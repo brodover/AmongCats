@@ -60,7 +60,8 @@ public class MoveNpc : NetworkBehaviour
         agent.isStopped = true;
 
         agent.speed = ClientCommon.Game.CatMovementSpeed;
-        agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed;
+        //agent.acceleration = agent.speed / ClientCommon.Game.TimeToMaxSpeed;
+        agent.acceleration = 0;
         agent.stoppingDistance = STOPPING_DISTANCE;
         agent.angularSpeed = SLOW_TURNING_ANGLE;
         agent.autoBraking = false;
