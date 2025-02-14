@@ -13,6 +13,9 @@ public class GameEngine : NetworkBehaviour
     private Canvas canvas;
     [SerializeField]
     private Button interactBtn;
+    [SerializeField]
+    private Button speedBtn;
+
     private GameTimer gameTimer;
     private MessMeter messMeter;
 
@@ -27,9 +30,9 @@ public class GameEngine : NetworkBehaviour
 
         if (SignalRConnectionManager.MyRoom.Id == "-1")
         {
-            SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
-            //SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
-            SpawnNPC();
+            //SpawnPlayer(Role.Human, NetworkManager.ServerClientId);
+            SpawnPlayer(Role.Cat, NetworkManager.ServerClientId, true);
+            //SpawnNPC();
             InitNGOs();
             InitInteractables();
             return;
@@ -92,6 +95,7 @@ public class GameEngine : NetworkBehaviour
             clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.HumanPrefab));
             clone.transform.position = new Vector3(-2.0f, 0, 0);
             interactBtn.GetComponentInChildren<TMP_Text>().text = "Clean up";
+            speedBtn.gameObject.SetActive(false);
 
         }
         else if (role == Common.Role.Cat)
@@ -99,6 +103,7 @@ public class GameEngine : NetworkBehaviour
             clone = Instantiate(Resources.Load<GameObject>(ClientCommon.File.CatPrefab));
             clone.transform.position = new Vector3(5.0f, 0, 0);
             interactBtn.GetComponentInChildren<TMP_Text>().text = "Mess up";
+            speedBtn.gameObject.SetActive(true);
         }
         else {
             return;
@@ -106,7 +111,7 @@ public class GameEngine : NetworkBehaviour
 
         //clone.GetComponent<CharacterController>().toPlayerControl = !disable;
         //clone.GetComponent<CharacterController>().toSpectate = !disable;
-        clone.GetComponent<CharacterController>().InitPlayer(interactBtn);
+        clone.GetComponent<CharacterController>().InitPlayer(interactBtn, speedBtn);
         clone.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
     }
 
@@ -286,6 +291,16 @@ public class GameEngine : NetworkBehaviour
         foreach (var interactable in list)
         {
             interactable.OnStateChanged -= HandleInteractableStateChanged;
+        }
+
+        if (interactBtn != null)
+        {
+            interactBtn.onClick.RemoveAllListeners();
+        }
+
+        if (speedBtn != null)
+        {
+            speedBtn.onClick.RemoveAllListeners();
         }
 
         base.OnDestroy();

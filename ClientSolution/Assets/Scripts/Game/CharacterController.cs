@@ -1,3 +1,4 @@
+using System;
 using Assets.Scripts.Game;
 using Unity.Netcode;
 using UnityEngine;
@@ -6,16 +7,21 @@ using UnityEngine.UI;
 
 public class CharacterController : NetworkBehaviour
 {
+    private MoveInput moveI = null;
+
     public bool toPlayerControl = true;
     public bool toSpectate = true;
 
-    public void InitPlayer(Button interactBtn, bool toPlayerControl=true, bool toSpectate=true)
+    private const float _RANGE = 2f;
+
+    public void InitPlayer(Button interactBtn, Button speedBtn, bool toPlayerControl=true, bool toSpectate=true)
     {
         if (toPlayerControl)
         {
-            gameObject.AddComponent<MoveInput>();
-            var interact = gameObject.AddComponent<InteractInput>();
-            interactBtn.onClick.AddListener(interact.OnInteractClick);
+            moveI = gameObject.AddComponent<MoveInput>();
+            interactBtn.onClick.AddListener(OnInteractClick);
+            speedBtn.onClick.AddListener(OnSpeedClick);
+            moveI.speedBtn = speedBtn;
         }
         transform.GetChild(0).GetComponent<SpriteRenderer>().sortingOrder = 3; // 1 higher than other characters
 
@@ -31,5 +37,33 @@ public class CharacterController : NetworkBehaviour
     {
         gameObject.AddComponent<NavMeshAgent>();
         gameObject.AddComponent<MoveNpc>();
+    }
+
+
+    public void OnInteractClick()
+    {
+        var targetList = FindObjectsByType<Interactable>(FindObjectsSortMode.None);
+
+        foreach (var target in targetList)
+        {
+            var distance = Vector3.Distance(transform.position, target.transform.position);
+            if (distance > _RANGE) { continue; }
+
+            if (gameObject.tag == "Human")
+            {
+                target.CleanUp();
+            }
+            else if (gameObject.tag == "Cat")
+            {
+                target.MessUp();
+            }
+
+            break;
+        }
+    }
+
+    public void OnSpeedClick()
+    {
+        moveI.ChangeSpeed();
     }
 }

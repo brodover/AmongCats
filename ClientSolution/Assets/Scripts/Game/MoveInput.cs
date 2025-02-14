@@ -1,5 +1,7 @@
 using System;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Assets.Scripts.Game
 {
@@ -7,15 +9,25 @@ namespace Assets.Scripts.Game
     {
         private Rigidbody rb;
         private Transform childT;
+        public Button speedBtn = null;
 
-        [SerializeField] private float moveSpeed = ClientCommon.Game.HumanMovementSpeed;
+        [SerializeField] 
+        private float moveSpeed = ClientCommon.Game.HumanMovementSpeed;
 
         private float acceleration;
+        private bool isSpeedUp = false;
+        private float speedUpCooldownTimer = 0f;
+        private float speedUpDurationTimer = 0f;
 
         private Vector2 _currentVelocity = Vector2.zero;   // Tracks current velocity
 
         private Vector2 _moveInput2;
         private InputSystem_Actions _playerInput;
+
+        private float _tempSpeedMultiplier = 1.7f;
+        private float _tempSpeedDuration = 3f;
+        private float _tempSpeedCooldown = 7f;
+        private Color _selectedColor = new Color(0.95f, 0.59f, 0.03f);
 
         void Awake()
         {
@@ -32,7 +44,33 @@ namespace Assets.Scripts.Game
         {
             _moveInput2 = Vector2.zero;
 
-            acceleration = moveSpeed / ClientCommon.Game.TimeToMaxSpeed;
+            //acceleration = moveSpeed / ClientCommon.Game.TimeToMaxSpeed;
+        }
+
+        public void ChangeSpeed()
+        {
+            if (isSpeedUp)
+            {
+                StopSpeedUp();
+            }
+            else if (speedUpCooldownTimer <= 0f)
+            {
+                isSpeedUp = true;
+                speedUpDurationTimer = _tempSpeedDuration;
+                speedBtn.GetComponent<Image>().color = _selectedColor;
+            }
+            else
+            {
+                Debug.Log("Speed Up is still on cooldown.");
+            }
+        }
+
+        private void StopSpeedUp()
+        {
+            isSpeedUp = false;
+            speedUpCooldownTimer = _tempSpeedCooldown;
+            speedBtn.interactable = false;
+            speedBtn.GetComponent<Image>().color = Color.white;
         }
 
         void OnEnable()
@@ -47,6 +85,27 @@ namespace Assets.Scripts.Game
             _playerInput.Disable(); // Disable the input system.
         }
 
+        void Update()
+        {
+            if (speedUpCooldownTimer > 0f)
+            {
+                speedUpCooldownTimer -= Time.deltaTime;
+                if (speedUpCooldownTimer <= 0f)
+                {
+                    speedBtn.interactable = true;
+                }
+            }
+
+            if (speedUpDurationTimer > 0f)
+            {
+                speedUpDurationTimer -= Time.deltaTime;
+                if (speedUpDurationTimer <= 0f)
+                {
+                    StopSpeedUp();
+                }
+            }
+        }
+
         void FixedUpdate()
         {
             HandleMovement();
@@ -59,6 +118,10 @@ namespace Assets.Scripts.Game
 
             // Target velocity based on input
             Vector2 targetVelocity = _moveInput2.normalized * moveSpeed;
+            if (isSpeedUp)
+            {
+                targetVelocity = targetVelocity * _tempSpeedMultiplier;
+            }
 
             if (_moveInput2 != Vector2.zero)
             {
