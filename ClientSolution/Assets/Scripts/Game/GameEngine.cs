@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static ClientCommon.Game;
 using static SharedLibrary.Common;
 
 public class GameEngine : NetworkBehaviour
@@ -15,16 +16,34 @@ public class GameEngine : NetworkBehaviour
     private Button interactBtn;
     [SerializeField]
     private Button speedBtn;
+    [SerializeField]
+    private GameObject endScreen;
+    [SerializeField]
+    private TMP_Text endText;
+    [SerializeField]
+    private Button mainMenuBtn;
 
     private GameTimer gameTimer;
     private MessMeter messMeter;
 
-    private bool isClosed = false;
+    private State gameState = 0;
     private int clientCount = 0;
+
+    private string endTextStr = string.Empty;
+    private const string HUMAN_WINS = "Human wins";
+    private const string CAT_WINS = "Cat wins";
+    private const string PLAYER_DISCONNECTED = "Player disconnected";
+
+    private void Awake()
+    {
+        endScreen.SetActive(false);
+    }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        mainMenuBtn.onClick.AddListener(StartGameClose);
 
         SpawnNGOs();
 
@@ -176,7 +195,7 @@ public class GameEngine : NetworkBehaviour
     private void InitMessMeter()
     {
         messMeter.transform.SetParent(canvas.transform, false);
-        messMeter.OnMaxMessReached += HandleGameTimerEnded;
+        messMeter.OnMaxMessReached += HandleMaxMessReached;
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -193,7 +212,7 @@ public class GameEngine : NetworkBehaviour
         try
         {
             Debug.Log($"HandleSeverMatchClosed: Draw");
-            isClosed = true;
+            ShowEndGameScreen(PLAYER_DISCONNECTED);
         }
         catch (Exception ex)
         {
@@ -219,7 +238,8 @@ public class GameEngine : NetworkBehaviour
         try
         {
             Debug.Log($"HandleGameTimerEnded: Human wins");
-            
+
+            ShowEndGameScreen(HUMAN_WINS);
         }
         catch (Exception ex)
         {
@@ -232,7 +252,7 @@ public class GameEngine : NetworkBehaviour
         try
         {
             Debug.Log($"HandleMaxMessReached: Cat wins");
-
+            ShowEndGameScreen(CAT_WINS);
         }
         catch (Exception ex)
         {
@@ -240,6 +260,25 @@ public class GameEngine : NetworkBehaviour
         }
     }
 
+    private void ShowEndGameScreen(string msg)
+    {
+        endTextStr = msg;
+        gameState = State.Ended;
+    }
+
+    private void OnGameEnd()
+    {
+        // disable characters
+        // stop timer etc
+
+        endScreen.SetActive(true);
+        endText.text = endTextStr;
+    }
+
+    private void StartGameClose()
+    {
+        gameState = State.Closed;
+    }
 
     private void OnGameClose()
     {
@@ -257,10 +296,16 @@ public class GameEngine : NetworkBehaviour
 
     void Update()
     {
-        if (isClosed)
+        switch (gameState)
         {
-            isClosed = false;
-            OnGameClose();
+            case State.Ended:
+                gameState = State.EndHandled;
+                OnGameEnd();
+                break;
+            case State.Closed:
+                gameState = State.CloseHandled;
+                OnGameClose();
+                break;
         }
     }
 
@@ -301,6 +346,11 @@ public class GameEngine : NetworkBehaviour
         if (speedBtn != null)
         {
             speedBtn.onClick.RemoveAllListeners();
+        }
+
+        if (mainMenuBtn != null)
+        {
+            mainMenuBtn.onClick.RemoveAllListeners();
         }
 
         base.OnDestroy();

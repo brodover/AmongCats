@@ -30,5 +30,15 @@ public static class ClientCommon
         public const float HumanMovementSpeed = 7f;
         public const float CatMovementSpeed = 12f;
         public const int InitMess = 2;
+
+        public enum State
+        {
+            Uninitialized=0,
+            Ongoing=5,
+            Ended=10,
+            EndHandled=11,
+            Closed=15,
+            CloseHandled=16,
+        }
     }
 }
